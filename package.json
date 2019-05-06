@@ -1,0 +1,22 @@
+{
+  "name": "fund-protocol",
+  "author": "CoinAlpha, Inc",
+  "version": "0.3.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CoinAlpha/fund-protocol.git"
+  },
+  "scripts": {},
+  "dependencies": {
+    "solc": "0.4.13",
+    "zeppelin-solidity": "^1.1.0"
+  },
+  "devDependencies": {
+    "bluebird": "^3.5.1",
+    "eslint": "^4.8.0",
+    "eslint-config-airbnb": "^16.0.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2"
+  }
+}
