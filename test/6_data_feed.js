@@ -144,7 +144,7 @@ contract(`****** START TEST [ ${scriptName} ]*******`, (accounts) => {
     it('usdUnsubscribedAmount should exist and be initialized to 0', () => {
       assert.isDefined(dataFeed.usdUnsubscribedAmount, 'variable undefined');
       return dataFeed.usdUnsubscribedAmount.call()
-        .then(_usdUnsubAmount => assert.strictEqual(Number(_usdUnsubAmount), 0, 'USD unsub was not initialized to 0'))
+        .then(_usdUnsubAmount => assert.equal(Number(_usdUnsubAmount), 0, 'USD unsub was not initialized to 0'))
         .catch(err => assert.throw(`usdUnsubscribedAmount: check variable error: ${err.toString()}`));
     });
 

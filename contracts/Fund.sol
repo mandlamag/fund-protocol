@@ -462,7 +462,6 @@ contract Fund is DestructiblePausable {
   // Withdraw payment in the ethPendingWithdrawal balance
   // Delegates logic to the InvestorActions module
   function withdrawPayment()
-    public
     whenNotPaused
     returns (bool success)
   {
@@ -482,7 +481,6 @@ contract Fund is DestructiblePausable {
   // and accumulated management fee balaces.
   // Delegates logic to the NavCalculator module
   function calcNav()
-  public
     onlyOwner
     returns (bool success)
   {
@@ -508,7 +506,6 @@ contract Fund is DestructiblePausable {
 
   // Withdraw management fees from the contract
   function withdrawMgmtFees()
-    public
     whenNotPaused
     onlyManager
     returns (bool success)
@@ -526,7 +523,6 @@ contract Fund is DestructiblePausable {
 
   // Withdraw management fees from the contract
   function withdrawAdminFees()
-    public
     whenNotPaused
     onlyOwner
     returns (bool success)
@@ -546,8 +542,7 @@ contract Fund is DestructiblePausable {
 
   // Returns a list of all investor addresses
   function getInvestorAddresses()
-    public
-    view
+    constant
     onlyOwner
     returns (address[])
   {
@@ -556,7 +551,6 @@ contract Fund is DestructiblePausable {
 
   // Update the address of the manager account
   function setManager(address _addr)
-    public
     whenNotPaused
     onlyManager
     returns (bool success)
@@ -570,7 +564,6 @@ contract Fund is DestructiblePausable {
 
   // Update the address of the exchange account
   function setExchange(address _addr)
-    public
     onlyOwner
     returns (bool success)
   {
@@ -583,7 +576,6 @@ contract Fund is DestructiblePausable {
 
   // Update the address of the NAV Calculator module
   function setNavCalculator(address _addr)
-    public
     onlyOwner
     returns (bool success)
   {
@@ -596,7 +588,6 @@ contract Fund is DestructiblePausable {
 
   // Update the address of the Investor Actions module
   function setInvestorActions(address _addr)
-    public
     onlyOwner
     returns (bool success)
   {
@@ -609,7 +600,6 @@ contract Fund is DestructiblePausable {
 
   // Update the address of the data feed contract
   function setDataFeed(address _addr) 
-    public
     onlyOwner
     returns (bool success) 
   {
@@ -622,7 +612,6 @@ contract Fund is DestructiblePausable {
 
   // Utility function for exchange to send funds to contract
   function remitFromExchange()
-    public
     payable
     onlyFromExchange
     returns (bool success)
@@ -633,7 +622,6 @@ contract Fund is DestructiblePausable {
 
   // Utility function for contract to send funds to exchange
   function sendToExchange(uint amount)
-    public
     onlyOwner
     returns (bool success)
   {
@@ -647,8 +635,7 @@ contract Fund is DestructiblePausable {
 
   // Converts ether to a corresponding number of shares based on the current nav per share
   function ethToShares(uint _eth)
-    public
-    view
+    constant
     returns (uint shares)
   {
     return ethToUsd(_eth).mul(10 ** decimals).div(navPerShare);
@@ -656,24 +643,21 @@ contract Fund is DestructiblePausable {
 
   // Converts shares to a corresponding amount of ether based on the current nav per share
   function sharesToEth(uint _shares)
-    public
-    view
+    constant
     returns (uint ethAmount)
   {
     return usdToEth(_shares.mul(navPerShare).div(10 ** decimals));
   }
 
-  function usdToEth(uint _usd)
-    public
-    view
+  function usdToEth(uint _usd) 
+    constant 
     returns (uint eth)
   {
     return _usd.mul(1e18).div(dataFeed.usdEth());
   }
 
-  function ethToUsd(uint _eth)
-    public
-    view
+  function ethToUsd(uint _eth) 
+    constant 
     returns (uint usd)
   {
     return _eth.mul(dataFeed.usdEth()).div(1e18);
@@ -681,8 +665,7 @@ contract Fund is DestructiblePausable {
 
   // Returns the fund's balance less pending subscriptions and withdrawals
   function getBalance()
-    public
-    view
+    constant
     returns (uint ethAmount)
   {
     return this.balance.sub(totalEthPendingSubscription).sub(totalEthPendingWithdrawal);

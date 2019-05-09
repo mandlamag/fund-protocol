@@ -17,7 +17,7 @@ import "./zeppelin/DestructibleModified.sol";
  */
 
 contract INavCalculator {
-  function calculate() public
+  function calculate()
     returns (
       uint lastCalcDate,
       uint navPerShare,
@@ -64,8 +64,8 @@ contract NavCalculator is DestructibleModified {
 
   // Calculate nav and allocate fees
   function calculate()
-    public
     onlyFund
+    constant
     returns (
       uint lastCalcDate,
       uint navPerShare,
@@ -132,7 +132,6 @@ contract NavCalculator is DestructibleModified {
 
   // Update the address of the Fund contract
   function setFund(address _address)
-    public
     onlyOwner
   {
     fund = IFund(_address);
@@ -141,7 +140,6 @@ contract NavCalculator is DestructibleModified {
 
   // Update the address of the data feed contract
   function setDataFeed(address _address)
-    public
     onlyOwner
   {
     dataFeed = IDataFeed(_address);
@@ -152,46 +150,46 @@ contract NavCalculator is DestructibleModified {
   // Returns the fee amount associated with an annual fee accumulated given time elapsed and the annual fee rate
   // Equivalent to: annual fee percentage * fund totalSupply * (seconds elapsed / seconds in a year)
   // Has the same denomination as the fund totalSupply
-  function getAnnualFee(uint elapsedTime, uint annualFeeBps)
-    internal
-    view
-    returns (uint feePayment)
+  function getAnnualFee(uint elapsedTime, uint annualFeeBps) 
+    internal 
+    constant 
+    returns (uint feePayment) 
   {
     return annualFeeBps.mul(sharesToUsd(fund.totalSupply())).div(10000).mul(elapsedTime).div(31536000);
   }
 
   // Returns the performance fee for a given gain in portfolio value
-  function getPerformFee(uint _usdGain)
-    internal
-    view
-    returns (uint performFee)
+  function getPerformFee(uint _usdGain) 
+    internal 
+    constant 
+    returns (uint performFee)  
   {
     return fund.performFeeBps().mul(_usdGain).div(10 ** fund.decimals());
   }
 
   // Returns the gain in portfolio value for a given performance fee
-  function getGainGivenPerformFee(uint _performFee)
-    internal
-    view
-    returns (uint usdGain)
+  function getGainGivenPerformFee(uint _performFee) 
+    internal 
+    constant 
+    returns (uint usdGain)  
   {
     return _performFee.mul(10 ** fund.decimals()).div(fund.performFeeBps());
   }
 
   // Converts shares to a corresponding amount of USD based on the current nav per share
-  function sharesToUsd(uint _shares)
-    internal
-    view
-    returns (uint usd)
+  function sharesToUsd(uint _shares) 
+    internal 
+    constant 
+    returns (uint usd) 
   {
     return _shares.mul(fund.navPerShare()).div(10 ** fund.decimals());
   }
 
   // Converts total fund NAV to NAV per share
-  function toNavPerShare(uint _balance)
-    internal
-    view
-    returns (uint)
+  function toNavPerShare(uint _balance) 
+    internal 
+    constant 
+    returns (uint) 
   {
     return _balance.mul(10 ** fund.decimals()).div(fund.totalSupply());
   }

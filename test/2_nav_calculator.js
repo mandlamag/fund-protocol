@@ -114,7 +114,6 @@ contract('NavCalculator', (accounts) => {
     return Promise.all([Fund.deployed(), NavCalculator.deployed(), DataFeed.deployed()])
       .then(_values => {
         [fund, navCalculator, dataFeed] = _values;
-        console.log("######################################################################################", fund);
         return navCalculator.setFund(fund.address)
       })
       .then(() => {
