@@ -105,7 +105,6 @@ contract DataFeed is usingOraclize, DestructibleModified {
   function __callback(bytes32 _myid, string _result) {
     require(validIds[_myid]);
     require(msg.sender == oraclize_cbAddress());
-    
     uint returnValue;
     JsmnSolLib.Token[] memory tokens;
     uint actualNum;

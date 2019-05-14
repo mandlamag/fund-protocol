@@ -1,18 +1,23 @@
-
+if (!global.fetch) global.fetch = require('node-fetch')
 import express from 'express';
-import feed from './db/db';
+const cc = require('cryptocompare');
+cc.setApiKey('ULfORchERgARETETYlesTRIngeNTrUbseLa')
 const app = express();
 const PORT=3006;
 
 app.get('/', (req, res) => {
   res.send('ok')
 });
+app.get('/api/v1/portfolio', async(req, res) => {
+  const prices = await cc.priceMulti(['BTC', 'ETH', 'LTC'], ['USD']);
 
-app.get('/api/v1/portfolio', (req, res) => {
   res.status(200).send({
     success: 'true',
-    message: 'feed retrieved successfully',
-    data: feed
+    data: {value: 10000*(prices.BTC.USD),   //TODO: Fix this to point to the correct exchange the pull the correct portfolio
+      usdEth: prices.ETH.USD,
+      usdBtc: prices.BTC.USD,
+      usdLtc: prices.LTC.USD
+    }
   })
 });
 
