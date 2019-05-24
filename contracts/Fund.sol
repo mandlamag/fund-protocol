@@ -218,29 +218,28 @@ contract Fund is DestructiblePausable {
 
   // Modifies the max investment limit allowed for an investor
   // Delegates logic to the InvestorActions module
-  function modifyAllocation(address _addr, uint _allocation)
-    onlyOwner
+  function modifyAllocation(address _investorAddress, uint _allocation)
     returns (bool success)
   {
     // Adds the investor to investorAddresses array if their previous allocation was zero
-    if (investors[_addr].ethTotalAllocation == 0) {
+    if (investors[_investorAddress].ethTotalAllocation == 0) {
 
       // Check if address already exists before adding
       bool addressExists;
       for (uint i = 0; i < investorAddresses.length; i++) {
-        if (_addr == investorAddresses[i]) {
+        if (_investorAddress == investorAddresses[i]) {
           addressExists = true;
           i = investorAddresses.length;
         }
       }
       if (!addressExists) {
-        investorAddresses.push(_addr);
+        investorAddresses.push(_investorAddress);
       }
     }
-    uint ethTotalAllocation = investorActions.modifyAllocation(_addr, _allocation);
-    investors[_addr].ethTotalAllocation = ethTotalAllocation;
+    uint ethTotalAllocation = investorActions.modifyAllocation(_investorAddress, _allocation);
+    investors[_investorAddress].ethTotalAllocation = ethTotalAllocation;
 
-    LogAllocationModification(_addr, _allocation);
+    LogAllocationModification(_investorAddress, _allocation);
     return true;
   }
 

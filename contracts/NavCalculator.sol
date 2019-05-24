@@ -131,11 +131,11 @@ contract NavCalculator is DestructibleModified {
   // ********* ADMIN *********
 
   // Update the address of the Fund contract
-  function setFund(address _address)
+  function setFund(address _fundAddress)
     onlyOwner
   {
-    fund = IFund(_address);
-    fundAddress = _address;
+    fund = IFund(_fundAddress);
+    fundAddress = _fundAddress;
   }
 
   // Update the address of the data feed contract

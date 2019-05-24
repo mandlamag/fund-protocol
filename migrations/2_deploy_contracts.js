@@ -17,8 +17,8 @@ const USD_LTC_EXCHANGE_RATE         = 100;
 const DATA_FEED_GAS_RESERVE         = 100;
 
 // Fund settings
-const FUND_NAME                     = "CoinAlpha Falcon";
-const FUND_SYMBOL                   = "FALC";
+const FUND_NAME                     = "Bitvest Fund Token";
+const FUND_SYMBOL                   = "BFT";
 const FUND_DECIMALS                 = 4;
 const MANAGER_USD_ETH_BASIS         = 300;
 const MIN_INITIAL_SUBSCRIPTION_ETH  = 20;

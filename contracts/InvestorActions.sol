@@ -109,12 +109,12 @@ contract InvestorActions is DestructibleModified {
   {
     var (ethTotalAllocation, ethPendingSubscription, sharesOwned, sharesPendingRedemption, ethPendingWithdrawal) = fund.getInvestor(_addr);
 
-    if (sharesOwned == 0) {
-      require(_amount >= fund.minInitialSubscriptionEth());
-    } else {
-      require(_amount >= fund.minSubscriptionEth());
-    }
-    require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)));
+    // if (sharesOwned == 0) {
+    //   require(_amount >= fund.minInitialSubscriptionEth());
+    // } else {
+    //   require(_amount >= fund.minSubscriptionEth());
+    // }
+    // require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)));
 
     return (ethPendingSubscription.add(_amount),                                 // new investor.ethPendingSubscription
             fund.totalEthPendingSubscription().add(_amount)                      // new totalEthPendingSubscription
@@ -275,12 +275,12 @@ contract InvestorActions is DestructibleModified {
   // ********* ADMIN *********
 
   // Update the address of the Fund contract
-  function setFund(address _fund)
+  function setFund(address _fundAddress)
     onlyOwner
     returns (bool success)
   {
-    fund = IFund(_fund);
-    fundAddress = _fund;
+    fund = IFund(_fundAddress);
+    fundAddress = _fundAddress;
     return true;
   }
 
