@@ -73,7 +73,7 @@ contract DataFeed is usingOraclize, DestructibleModified {
     gasLimit = 300000;              // Adjust this value depending on code length
     gasPrice = 50000000000;         // 50 GWei, Oraclize default
 
-    oraclize_setCustomGasPrice(gasPrice);    
+    oraclize_setCustomGasPrice(gasPrice);
     oraclize_setProof(proofType_NONE);
   }
 

@@ -21,14 +21,14 @@ import "./zeppelin/DestructiblePausable.sol";
  */
 
 contract IFund {
-  uint    public decimals;
-  uint    public minInitialSubscriptionEth;
-  uint    public minSubscriptionEth;
-  uint    public minRedemptionShares;
-  uint    public totalEthPendingSubscription;
-  uint    public totalEthPendingWithdrawal;
-  uint    public totalSharesPendingRedemption;
-  uint    public totalSupply;
+  uint256    public decimals;
+  uint256    public minInitialSubscriptionEth;
+  uint256    public minSubscriptionEth;
+  uint256    public minRedemptionShares;
+  uint256    public totalEthPendingSubscription;
+  uint256    public totalEthPendingWithdrawal;
+  uint256    public totalSharesPendingRedemption;
+  uint256    public totalSupply;
 
   uint    public adminFeeBps;
   uint    public mgmtFeeBps;
@@ -161,13 +161,13 @@ constructor(
     string memory  _name,
     string memory  _symbol,
     uint    _decimals,
-    uint    _minInitialSubscriptionEth,
-    uint    _minSubscriptionEth,
-    uint    _minRedemptionShares,
-    uint    _adminFeeBps,
-    uint    _mgmtFeeBps,
-    uint    _performFeeBps,
-    uint    _managerUsdEthBasis
+    uint256    _minInitialSubscriptionEth,
+    uint256    _minSubscriptionEth,
+    uint256    _minRedemptionShares,
+    uint256    _adminFeeBps,
+    uint256    _mgmtFeeBps,
+    uint256    _performFeeBps,
+    uint256    _managerUsdEthBasis
   ) public
   {
     // Constants
