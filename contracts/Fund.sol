@@ -1,9 +1,9 @@
-pragma solidity ^0.4.13;
+pragma solidity >=0.4.22 <0.6.0;
 
 import "./NavCalculator.sol";
 import "./InvestorActions.sol";
 import "./DataFeed.sol";
-import "./math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./zeppelin/DestructiblePausable.sol";
 
 /**
@@ -41,6 +41,7 @@ contract IFund {
   uint    public lossCarryforward;
 
   function getInvestor(address _addr)
+    public
     returns (
       uint ethTotalAllocation,
       uint ethPendingSubscription,
@@ -50,18 +51,23 @@ contract IFund {
     ) {}
 
   function usdToEth(uint _usd) 
+    public
     returns (uint eth) {}
 
   function ethToUsd(uint _eth) 
+    public
     returns (uint usd) {}
 
   function ethToShares(uint _eth)
+    public
     returns (uint shares) {}
 
   function sharesToEth(uint _shares)
+    public
     returns (uint ethAmount) {}
 
   function getBalance()
+    public
     returns (uint ethAmount) {}
 }
 
@@ -79,7 +85,7 @@ contract Fund is DestructiblePausable {
   uint    public mgmtFeeBps;                   // annual base management fee, if any, in basis points
   uint    public performFeeBps;                // performance management fee earned on gains, in basis points
   address public manager;                      // address of the manager account allowed to withdraw base and performance management fees
-  address public exchange;                     // address of the exchange account where the manager conducts trading.
+  address payable exchange;                     // address of the exchange account where the manager conducts trading.
 
   // Variables that are updated after each call to the calcNav function
   uint    public lastCalcDate;
@@ -133,12 +139,12 @@ contract Fund is DestructiblePausable {
 
   // Modifiers
   modifier onlyFromExchange {
-    require(msg.sender == exchange);
+    require(msg.sender == exchange, "Access denied. Only exchange can access");
     _;
   }
 
   modifier onlyManager {
-    require(msg.sender == manager);
+    require(msg.sender == manager, "Access denied. Only manager can access");
     _;
   }
 
@@ -146,14 +152,14 @@ contract Fund is DestructiblePausable {
   * @dev Constructor function that creates a fund
   * This function is payable and treats any ether sent as part of the manager's own investment in the fund.
   */
-  function Fund(
+constructor(
     address _manager,
-    address _exchange,
+    address payable _exchange,
     address _navCalculator,
     address _investorActions,
     address _dataFeed,
-    string  _name,
-    string  _symbol,
+    string memory  _name,
+    string memory  _symbol,
     uint    _decimals,
     uint    _minInitialSubscriptionEth,
     uint    _minSubscriptionEth,
@@ -162,7 +168,7 @@ contract Fund is DestructiblePausable {
     uint    _mgmtFeeBps,
     uint    _performFeeBps,
     uint    _managerUsdEthBasis
-  )
+  ) public
   {
     // Constants
     name = _name;
@@ -195,13 +201,14 @@ contract Fund is DestructiblePausable {
     investors[manager].ethTotalAllocation = sharesToEth(managerShares);
     investors[manager].sharesOwned = managerShares;
 
-    LogAllocationModification(manager, sharesToEth(managerShares));
-    LogSubscription(manager, managerShares, navPerShare, _managerUsdEthBasis);
+    emit LogAllocationModification(manager, sharesToEth(managerShares));
+    emit LogSubscription(manager, managerShares, navPerShare, _managerUsdEthBasis);
   }
 
   // [INVESTOR METHOD] Returns the variables contained in the Investor struct for a given address
   function getInvestor(address _addr)
-    constant
+    public
+    view
     returns (
       uint ethTotalAllocation,
       uint ethPendingSubscription,
@@ -219,6 +226,7 @@ contract Fund is DestructiblePausable {
   // Modifies the max investment limit allowed for an investor
   // Delegates logic to the InvestorActions module
   function modifyAllocation(address _investorAddress, uint _allocation)
+    public
     returns (bool success)
   {
     // Adds the investor to investorAddresses array if their previous allocation was zero
@@ -239,14 +247,14 @@ contract Fund is DestructiblePausable {
     uint ethTotalAllocation = investorActions.modifyAllocation(_investorAddress, _allocation);
     investors[_investorAddress].ethTotalAllocation = ethTotalAllocation;
 
-    LogAllocationModification(_investorAddress, _allocation);
+    emit LogAllocationModification(_investorAddress, _allocation);
     return true;
   }
 
   // [INVESTOR METHOD] External wrapper for the getAvailableAllocation function in InvestorActions
   // Delegates logic to the InvestorActions module
   function getAvailableAllocation(address _addr)
-    constant
+    public
     returns (uint ethAvailableAllocation)
   {
     return investorActions.getAvailableAllocation(_addr);
@@ -254,6 +262,7 @@ contract Fund is DestructiblePausable {
 
   // Non-payable fallback function so that any attempt to send ETH directly to the contract is thrown
   function ()
+    external
     payable
     onlyFromExchange
   { remitFromExchange(); }
@@ -262,31 +271,35 @@ contract Fund is DestructiblePausable {
   // Delegates logic to the InvestorActions module
   // usdEthBasis is expressed in USD cents.  For example, for a rate of 300.01, _usdEthBasis = 30001
   function requestSubscription(uint _usdEthBasis)
+    public
     whenNotPaused
     payable
     returns (bool success)
   {
-    var (_ethPendingSubscription, _totalEthPendingSubscription) = investorActions.requestSubscription(msg.sender, msg.value);
+    (uint _ethPendingSubscription, uint _totalEthPendingSubscription) = investorActions.requestSubscription(msg.sender, msg.value);
     investors[msg.sender].ethPendingSubscription = _ethPendingSubscription;
     totalEthPendingSubscription = _totalEthPendingSubscription;
 
-    LogSubscriptionRequest(msg.sender, msg.value, _usdEthBasis);
+    emit LogSubscriptionRequest(msg.sender, msg.value, _usdEthBasis);
     return true;
   }
 
   // [INVESTOR METHOD] Cancels a subscription request
   // Delegates logic to the InvestorActions module
   function cancelSubscription()
+    public
     whenNotPaused
     returns (bool success)
   {
-    var (_ethPendingSubscription, _ethPendingWithdrawal, _totalEthPendingSubscription, _totalEthPendingWithdrawal) = investorActions.cancelSubscription(msg.sender);
+    (uint _ethPendingSubscription,uint _ethPendingWithdrawal,uint _totalEthPendingSubscription,
+    uint _totalEthPendingWithdrawal) = investorActions.cancelSubscription(msg.sender);
     investors[msg.sender].ethPendingSubscription = _ethPendingSubscription;
     investors[msg.sender].ethPendingWithdrawal = _ethPendingWithdrawal;
     totalEthPendingSubscription = _totalEthPendingSubscription;
     totalEthPendingWithdrawal = _totalEthPendingWithdrawal;
 
-    LogSubscriptionCancellation(msg.sender);
+    emit LogSubscriptionCancellation(msg.sender);
+
     return true;
   }
 
@@ -296,18 +309,19 @@ contract Fund is DestructiblePausable {
     internal
     returns (bool success)
   {
-    var (ethPendingSubscription, sharesOwned, shares, transferAmount, _totalSupply, _totalEthPendingSubscription) = investorActions.subscribe(_addr);
+   (uint ethPendingSubscription, uint sharesOwned, uint shares, uint transferAmount, uint _totalSupply, uint _totalEthPendingSubscription) = investorActions.subscribe(_addr);
     investors[_addr].ethPendingSubscription = ethPendingSubscription;
     investors[_addr].sharesOwned = sharesOwned;
     totalSupply = _totalSupply;
     totalEthPendingSubscription = _totalEthPendingSubscription;
 
     exchange.transfer(transferAmount);
-    LogSubscription(_addr, shares, navPerShare, dataFeed.usdEth());
-    LogTransferToExchange(transferAmount);
+    emit LogSubscription(_addr, shares, navPerShare, dataFeed.usdEth());
+    emit LogTransferToExchange(transferAmount);
     return true;
   }
   function subscribeInvestor(address _addr)
+    public
     onlyOwner
     returns (bool success)
   {
@@ -319,6 +333,7 @@ contract Fund is DestructiblePausable {
   // *Note re: gas - if there are too many investors (i.e. this process exceeds gas limits),
   //                 fallback is to subscribe() each individually
   function fillAllSubscriptionRequests()
+    public
     onlyOwner
     returns (bool allSubscriptionsFilled)
   {
@@ -335,7 +350,8 @@ contract Fund is DestructiblePausable {
 
   // Returns the total redemption requests not yet processed by the manager, denominated in ether
   function totalEthPendingRedemption()
-    constant
+    public
+    view
     returns (uint)
   {
     return sharesToEth(totalSharesPendingRedemption);
@@ -344,27 +360,29 @@ contract Fund is DestructiblePausable {
   // [INVESTOR METHOD] Issue a redemption request
   // Delegates logic to the InvestorActions module
   function requestRedemption(uint _shares)
+    public
     whenNotPaused
     returns (bool success)
   {
-    var (sharesPendingRedemption, _totalSharesPendingRedemption) = investorActions.requestRedemption(msg.sender, _shares);
+    (uint sharesPendingRedemption,uint  _totalSharesPendingRedemption) = investorActions.requestRedemption(msg.sender, _shares);
     investors[msg.sender].sharesPendingRedemption = sharesPendingRedemption;
     totalSharesPendingRedemption = _totalSharesPendingRedemption;
 
-    LogRedemptionRequest(msg.sender, _shares);
+    emit LogRedemptionRequest(msg.sender, _shares);
     return true;
   }
 
   // [INVESTOR METHOD] Cancels a redemption request
   // Delegates logic to the InvestorActions module
   function cancelRedemption()
+    public
     returns (bool success)
   {
-    var (_sharesPendingRedemption, _totalSharesPendingRedemption) = investorActions.cancelRedemption(msg.sender);
+    (uint _sharesPendingRedemption,uint  _totalSharesPendingRedemption) = investorActions.cancelRedemption(msg.sender);
     investors[msg.sender].sharesPendingRedemption = _sharesPendingRedemption;
     totalSharesPendingRedemption = _totalSharesPendingRedemption;
 
-    LogRedemptionCancellation(msg.sender);
+    emit LogRedemptionCancellation(msg.sender);
     return true;
   }
 
@@ -375,7 +393,8 @@ contract Fund is DestructiblePausable {
     internal
     returns (bool success)
   {
-    var (sharesOwned, sharesPendingRedemption, ethPendingWithdrawal, shares, _totalSupply, _totalSharesPendingRedemption, _totalEthPendingWithdrawal) = investorActions.redeem(_addr);
+   (uint sharesOwned,uint  sharesPendingRedemption,uint ethPendingWithdrawal, uint shares, 
+   uint _totalSupply, uint _totalSharesPendingRedemption, uint _totalEthPendingWithdrawal) = investorActions.redeem(_addr);
     investors[_addr].sharesOwned = sharesOwned;
     investors[_addr].sharesPendingRedemption = sharesPendingRedemption;
     investors[_addr].ethPendingWithdrawal = ethPendingWithdrawal;
@@ -383,10 +402,11 @@ contract Fund is DestructiblePausable {
     totalSharesPendingRedemption = _totalSharesPendingRedemption;
     totalEthPendingWithdrawal = _totalEthPendingWithdrawal;
 
-    LogRedemption(_addr, shares, navPerShare, dataFeed.usdEth());
+    emit LogRedemption(_addr, shares, navPerShare, dataFeed.usdEth());
     return true;
   }
   function redeemInvestor(address _addr)
+    public
     onlyOwner
     returns (bool success)
   {
@@ -398,10 +418,12 @@ contract Fund is DestructiblePausable {
   // Delegates logic to the InvestorActions module
   // See note on gas/for loop in fillAllSubscriptionRequests
   function fillAllRedemptionRequests()
+    public
     onlyOwner
     returns (bool success)
   {
-    require(totalEthPendingRedemption() <= this.balance.sub(totalEthPendingWithdrawal).sub(totalEthPendingSubscription));
+    require(totalEthPendingRedemption() <= address(this).balance.sub(totalEthPendingWithdrawal).sub(totalEthPendingSubscription),
+    "invalid total eth pending redemption");
 
     for (uint i = 0; i < investorAddresses.length; i++) {
       address addr = investorAddresses[i];
@@ -420,7 +442,8 @@ contract Fund is DestructiblePausable {
     internal
     returns (bool success)
   {
-    var (ethPendingWithdrawal, shares, _totalEthPendingSubscription, _totalSharesPendingRedemption, _totalSupply, _totalEthPendingWithdrawal) = investorActions.liquidate(_addr);
+    (uint ethPendingWithdrawal, uint shares, uint _totalEthPendingSubscription,
+    uint _totalSharesPendingRedemption,uint _totalSupply,uint _totalEthPendingWithdrawal) = investorActions.liquidate(_addr);
 
     investors[_addr].ethTotalAllocation = 0;
     investors[_addr].ethPendingSubscription = 0;
@@ -432,10 +455,11 @@ contract Fund is DestructiblePausable {
     totalSupply = _totalSupply;
     totalEthPendingWithdrawal = _totalEthPendingWithdrawal;
 
-    LogLiquidation(_addr, shares, navPerShare, dataFeed.usdEth());
+    emit LogLiquidation(_addr, shares, navPerShare, dataFeed.usdEth());
     return true;
   }
   function liquidateInvestor(address _addr)
+    public
     onlyOwner
     returns (bool success)
   {
@@ -446,6 +470,7 @@ contract Fund is DestructiblePausable {
   // Liquidates all investors
   // See note on gas/for loop in fillAllSubscriptionRequests
   function liquidateAllInvestors()
+    public
     onlyOwner
     returns (bool success)
   {
@@ -461,16 +486,17 @@ contract Fund is DestructiblePausable {
   // Withdraw payment in the ethPendingWithdrawal balance
   // Delegates logic to the InvestorActions module
   function withdrawPayment()
+    public
     whenNotPaused
     returns (bool success)
   {
-    var (payment, ethPendingWithdrawal, _totalEthPendingWithdrawal) = investorActions.withdraw(msg.sender);
+    (uint payment, uint ethPendingWithdrawal, uint _totalEthPendingWithdrawal) = investorActions.withdraw(msg.sender);
     investors[msg.sender].ethPendingWithdrawal = ethPendingWithdrawal;
     totalEthPendingWithdrawal = _totalEthPendingWithdrawal;
 
     msg.sender.transfer(payment);
 
-    LogWithdrawal(msg.sender, payment);
+    emit LogWithdrawal(msg.sender, payment);
     return true;
   }
 
@@ -480,15 +506,16 @@ contract Fund is DestructiblePausable {
   // and accumulated management fee balaces.
   // Delegates logic to the NavCalculator module
   function calcNav()
+    public
     onlyOwner
     returns (bool success)
   {
-    var (
-      _lastCalcDate,
-      _navPerShare,
-      _lossCarryforward,
-      _accumulatedMgmtFees,
-      _accumulatedAdminFees
+     (
+      uint256 _lastCalcDate,
+      uint _navPerShare,
+      uint _lossCarryforward,
+      uint _accumulatedMgmtFees,
+      uint _accumulatedAdminFees
     ) = navCalculator.calculate();
 
     lastCalcDate = _lastCalcDate;
@@ -497,7 +524,7 @@ contract Fund is DestructiblePausable {
     accumulatedMgmtFees = _accumulatedMgmtFees;
     accumulatedAdminFees = _accumulatedAdminFees;
 
-    LogNavSnapshot(lastCalcDate, navPerShare, lossCarryforward, accumulatedMgmtFees, accumulatedAdminFees);
+    emit LogNavSnapshot(lastCalcDate, navPerShare, lossCarryforward, accumulatedMgmtFees, accumulatedAdminFees);
     return true;
   }
 
@@ -505,6 +532,7 @@ contract Fund is DestructiblePausable {
 
   // Withdraw management fees from the contract
   function withdrawMgmtFees()
+    public
     whenNotPaused
     onlyManager
     returns (bool success)
@@ -512,16 +540,17 @@ contract Fund is DestructiblePausable {
     uint ethWithdrawal = usdToEth(accumulatedMgmtFees);
     require(ethWithdrawal <= getBalance());
 
-    address payee = msg.sender;
+    address payable payee = msg.sender;
 
     accumulatedMgmtFees = 0;
     payee.transfer(ethWithdrawal);
-    LogManagementFeeWithdrawal(ethWithdrawal, dataFeed.usdEth());
+    emit LogManagementFeeWithdrawal(ethWithdrawal, dataFeed.usdEth());
     return true;
   }
 
   // Withdraw management fees from the contract
   function withdrawAdminFees()
+    public
     whenNotPaused
     onlyOwner
     returns (bool success)
@@ -529,11 +558,11 @@ contract Fund is DestructiblePausable {
     uint ethWithdrawal = usdToEth(accumulatedAdminFees);
     require(ethWithdrawal <= getBalance());
 
-    address payee = msg.sender;
+    address payable payee = msg.sender;
 
     accumulatedMgmtFees = 0;
     payee.transfer(ethWithdrawal);
-    LogAdminFeeWithdrawal(ethWithdrawal, dataFeed.usdEth());
+    emit LogAdminFeeWithdrawal(ethWithdrawal, dataFeed.usdEth());
     return true;
   }
 
@@ -541,15 +570,17 @@ contract Fund is DestructiblePausable {
 
   // Returns a list of all investor addresses
   function getInvestorAddresses()
-    constant
+    public
+    view
     onlyOwner
-    returns (address[])
+    returns (address[] memory)
   {
     return investorAddresses;
   }
 
   // Update the address of the manager account
   function setManager(address _addr)
+    public
     whenNotPaused
     onlyManager
     returns (bool success)
@@ -557,76 +588,83 @@ contract Fund is DestructiblePausable {
     require(_addr != address(0));
     address old = manager;
     manager = _addr;
-    LogManagerAddressChanged(old, _addr);
+    emit LogManagerAddressChanged(old, _addr);
     return true;
   }
 
   // Update the address of the exchange account
-  function setExchange(address _addr)
+  function setExchange(address payable _addr)
+    public
     onlyOwner
     returns (bool success)
   {
-    require(_addr != address(0));
+    require(_addr != address(0), "Valid address is required!");
     address old = exchange;
     exchange = _addr;
-    LogExchangeAddressChanged(old, _addr);
+    emit LogExchangeAddressChanged(old, _addr);
     return true;
   }
 
   // Update the address of the NAV Calculator module
   function setNavCalculator(address _addr)
+    public
     onlyOwner
     returns (bool success)
   {
-    require(_addr != address(0));
-    address old = navCalculator;
+    require(_addr != address(0), "Valid address is required!");
+    INavCalculator old = navCalculator;
     navCalculator = INavCalculator(_addr);
-    LogNavCalculatorModuleChanged(old, _addr);
+    emit LogNavCalculatorModuleChanged(address(old), _addr);
     return true;
   }
 
   // Update the address of the Investor Actions module
   function setInvestorActions(address _addr)
+    public
     onlyOwner
     returns (bool success)
   {
-    require(_addr != address(0));
-    address old = investorActions;
+    require(_addr != address(0), "Valid address is required!");
+    IInvestorActions old = investorActions;
     investorActions = IInvestorActions(_addr);
-    LogInvestorActionsModuleChanged(old, _addr);
+    emit LogInvestorActionsModuleChanged(address(old), _addr);
     return true;
   }
 
   // Update the address of the data feed contract
   function setDataFeed(address _addr) 
+    public
     onlyOwner
     returns (bool success) 
   {
-    require(_addr != address(0));
-    address old = dataFeed;
+    require(_addr != address(0), "Valid address is required!");
+    IDataFeed old = dataFeed;
     dataFeed = IDataFeed(_addr);
-    LogDataFeedModuleChanged(old, _addr);
+    emit LogDataFeedModuleChanged(address(old), _addr);
     return true;
   }
 
   // Utility function for exchange to send funds to contract
   function remitFromExchange()
+    public
     payable
     onlyFromExchange
     returns (bool success)
   {
-    LogTransferFromExchange(msg.value);
+    emit LogTransferFromExchange(msg.value);
     return true;
   }
 
   // Utility function for contract to send funds to exchange
   function sendToExchange(uint amount)
+    public
     onlyOwner
     returns (bool success)
   {
-    require(amount <= this.balance.sub(totalEthPendingSubscription).sub(totalEthPendingWithdrawal));
+    require(amount <= address(this).balance.sub(totalEthPendingSubscription).sub(totalEthPendingWithdrawal),
+     "Funds cannot be greater than your balance");
     exchange.transfer(amount);
-    LogTransferToExchange(amount);
+    emit LogTransferToExchange(amount);
     return true;
   }
 
@@ -634,7 +672,8 @@ contract Fund is DestructiblePausable {
 
   // Converts ether to a corresponding number of shares based on the current nav per share
   function ethToShares(uint _eth)
-    constant
+    public
+    view
     returns (uint shares)
   {
     return ethToUsd(_eth).mul(10 ** decimals).div(navPerShare);
@@ -642,21 +681,24 @@ contract Fund is DestructiblePausable {
 
   // Converts shares to a corresponding amount of ether based on the current nav per share
   function sharesToEth(uint _shares)
-    constant
+    public
+    view
     returns (uint ethAmount)
   {
     return usdToEth(_shares.mul(navPerShare).div(10 ** decimals));
   }
 
   function usdToEth(uint _usd) 
-    constant 
+    public
+    view 
     returns (uint eth)
   {
     return _usd.mul(1e18).div(dataFeed.usdEth());
   }
 
   function ethToUsd(uint _eth) 
-    constant 
+    public
+    view 
     returns (uint usd)
   {
     return _eth.mul(dataFeed.usdEth()).div(1e18);
@@ -664,9 +706,10 @@ contract Fund is DestructiblePausable {
 
   // Returns the fund's balance less pending subscriptions and withdrawals
   function getBalance()
-    constant
+    public
+    view
     returns (uint ethAmount)
   {
-    return this.balance.sub(totalEthPendingSubscription).sub(totalEthPendingWithdrawal);
+    return address(this).balance.sub(totalEthPendingSubscription).sub(totalEthPendingWithdrawal);
   }
 }

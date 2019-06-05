@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity >=0.4.22 <0.6.0;
 
 
 import "./DestructibleModified.sol";
@@ -21,7 +21,7 @@ contract DestructiblePausable is DestructibleModified {
    * @dev Modifier to make a function callable only when the contract is not paused.
    */
   modifier whenNotPaused() {
-    require(!paused);
+    require(!paused, "Should not be paused");
     _;
   }
 
@@ -29,23 +29,23 @@ contract DestructiblePausable is DestructibleModified {
    * @dev Modifier to make a function callable only when the contract is paused.
    */
   modifier whenPaused() {
-    require(paused);
+    require(paused, "Should be paused");
     _;
   }
 
   /**
    * @dev called by the owner to pause, triggers stopped state
    */
-  function pause() onlyOwner whenNotPaused {
+  function pause() public onlyOwner whenNotPaused {
     paused = true;
-    Pause();
+    emit Pause();
   }
 
   /**
    * @dev called by the owner to unpause, returns to normal state
    */
-  function unpause() onlyOwner whenPaused {
+  function unpause() public onlyOwner whenPaused {
     paused = false;
-    Unpause();
+    emit Unpause();
   }
 }

@@ -1,10 +1,9 @@
-pragma solidity ^0.4.13;
+pragma solidity >=0.4.22 <0.6.0;
 
-import './oraclize/usingOraclize.sol';
+import './oraclize/oraclizeAPI_0.5.sol';
 import './zeppelin/DestructibleModified.sol';
-import "./math/SafeMath.sol";
-import "./jsmnsol/JsmnSolLib.sol";
-
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "jsmnsol-lib/JsmnSolLib.sol";
 /**
  * @title DataFeed
  * @author CoinAlpha, Inc. <contact@coinalpha.com>
@@ -49,14 +48,15 @@ contract DataFeed is usingOraclize, DestructibleModified {
   event LogUsdUnsubscribedAmountUpdate(uint usdUnsubscribedAmount);
   event LogWithdrawal(address manager, uint eth);
 
-  function DataFeed(
-    string  _queryUrl,
+  constructor(
+    string  memory _queryUrl,
     uint    _secondsBetweenQueries,
     uint    _initialUsdEthRate,
     uint    _initialUsdBtcRate,
     uint    _initialUsdLtcRate,
     address _exchange
   )
+    public
     payable
   {
     // Testing Oraclize using Ethereum bridge (see readme for more details)
@@ -80,13 +80,14 @@ contract DataFeed is usingOraclize, DestructibleModified {
   // Updates the value variable by fetching the queryUrl via Oraclize.
   // Recursively calls the update function again after secondsBetweenQueries seconds
   function updateWithOraclize()
+  public
     payable
   {
     if (useOraclize) {
-      if (oraclize.getPrice("URL") > this.balance) {
-        LogDataFeedQuery("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
+      if (oraclize.getPrice("URL") > address(this).balance) {
+       emit LogDataFeedQuery("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
       } else {
-        LogDataFeedQuery("Oraclize query was sent, standing by for the answer..");
+        emit LogDataFeedQuery("Oraclize query was sent, standing by for the answer..");
         bytes32 queryId;
         if (secondsBetweenQueries > 0) {
           queryId = oraclize_query(secondsBetweenQueries, "URL", queryUrl, gasLimit);
@@ -102,7 +103,7 @@ contract DataFeed is usingOraclize, DestructibleModified {
   // 1) portfolio value in ETH, with 2 decimal places
   // 2) current USD/ETH exchange rate, with 2 decimal places
   // The function parses the JSON and stores the value and usdEth.
-  function __callback(bytes32 _myid, string _result) {
+  function __callback(bytes32 _myid, string memory _result) public {
     require(validIds[_myid]);
     require(msg.sender == oraclize_cbAddress());
     uint returnValue;
@@ -128,31 +129,31 @@ contract DataFeed is usingOraclize, DestructibleModified {
 
       timestamp = now;
 
-      LogDataFeedResponse(_result, value, usdEth, usdBtc, usdLtc, timestamp);
+      emit LogDataFeedResponse(_result, value, usdEth, usdBtc, usdLtc, timestamp);
       if (secondsBetweenQueries > 0) {
         updateWithOraclize();
       }
     } else {
-      LogDataFeedError(_result);
+      emit LogDataFeedError(_result);
     }
     delete validIds[_myid];
   }
 
-  function updateWithExchange(uint _percent)
+  function updateWithExchange(uint _percent) public
     onlyOwner
     returns (bool success)
   {
     if (!useOraclize) {
       value = exchange.balance.mul(usdEth).mul(_percent).div(1e20).sub(usdUnsubscribedAmount);
       timestamp = now;
-      LogDataFeedResponse("mock", value, usdEth, usdBtc, usdLtc, timestamp);
+      emit LogDataFeedResponse("mock", value, usdEth, usdBtc, usdLtc, timestamp);
       return true;
     }
   }
 
   // Manager override of values
   // Amounts are in units of 1 cent, i.e. $123.45 corresponds to an input if 12345
-  function updateByManager(uint _portfolioValue, uint _usdEth, uint _usdBtc, uint _usdLtc)
+  function updateByManager(uint _portfolioValue, uint _usdEth, uint _usdBtc, uint _usdLtc) public
     onlyOwner
     returns (bool success)
   {
@@ -162,24 +163,26 @@ contract DataFeed is usingOraclize, DestructibleModified {
     usdBtc = _usdBtc;
     usdLtc = _usdLtc;
     timestamp = now;
-    LogDataFeedResponse("manager update", value, usdEth, usdBtc, usdLtc, timestamp);
+    emit LogDataFeedResponse("manager update", value, usdEth, usdBtc, usdLtc, timestamp);
     return true;
   }
 
   // Amounts are in units of 1 cent, i.e. $123.45 corresponds to an input if 12345
   function updateUsdUnsubscribedAmount(uint _usdUnsubcribedAmount)
+    public
     onlyOwner
     returns (bool success)
   {
     require(_usdUnsubcribedAmount >= 0);
     usdUnsubscribedAmount = _usdUnsubcribedAmount;
-    LogUsdUnsubscribedAmountUpdate(usdUnsubscribedAmount);
+    emit LogUsdUnsubscribedAmountUpdate(usdUnsubscribedAmount);
     return true;
   }
 
   // ********* ADMIN *********
 
-  function changeQueryUrl(string _url)
+  function changeQueryUrl(string memory _url)
+    public
     onlyOwner
     returns (bool success)
   {
@@ -188,6 +191,7 @@ contract DataFeed is usingOraclize, DestructibleModified {
   }
 
   function changeInterval(uint _seconds)
+    public
     onlyOwner
     returns (bool success)
   {
@@ -196,6 +200,7 @@ contract DataFeed is usingOraclize, DestructibleModified {
   }
 
   function changeGasPrice(uint _price)
+    public
     onlyOwner
     returns (bool success)
   {
@@ -206,6 +211,7 @@ contract DataFeed is usingOraclize, DestructibleModified {
   }
 
   function changeGasLimit(uint _limit)
+    public
     onlyOwner
     returns (bool success)
   {
@@ -214,6 +220,7 @@ contract DataFeed is usingOraclize, DestructibleModified {
   }
 
   function toggleUseOraclize()
+    public
     onlyOwner
     returns (bool)
   {
@@ -222,12 +229,13 @@ contract DataFeed is usingOraclize, DestructibleModified {
   }
 
   function withdrawBalance()
+    public
     onlyOwner
     returns (bool success)
   {
-    uint payment = this.balance;
+    uint payment = address(this).balance;
     msg.sender.transfer(payment);
-    LogWithdrawal(msg.sender, payment);
+    emit LogWithdrawal(msg.sender, payment);
     return true;
   }
 

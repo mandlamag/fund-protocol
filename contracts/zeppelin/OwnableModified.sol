@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity >=0.4.22 <0.6.0;
 
 
 /**
@@ -11,27 +11,27 @@ pragma solidity ^0.4.13;
  * functions, this simplifies the implementation of "user permissions".
  */
 contract OwnableModified {
-  address[] public owners;
+  address payable[] public owners;
   uint maxOwners;
 
   /**
     * Event emitted when a new owner has been added
     * @param addedOwner The new added owner of the contract.
     */
-  event LogOwnerAdded(address indexed addedOwner);
+  event LogOwnerAdded(address payable indexed addedOwner);
 
   /**
     * Event emitted when ownership is tranferred
     * @param previousOwner The previous owner, who happened to effect the change.
     * @param newOwner The new, and current, owner of the contract.
     */
-  event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  event LogOwnershipTransferred(address payable indexed previousOwner, address indexed newOwner);
 
   /**
    * @dev The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
-  function OwnableModified() {
+  constructor() public {
     owners.push(msg.sender);
     maxOwners = 2;
   }
@@ -55,22 +55,24 @@ contract OwnableModified {
    * @dev Allows a current owner to add another address that can control of the contract.
    * @param newOwner The address to add ownership rights.
    */
-  function addOwner(address newOwner)
+  function addOwner(address payable newOwner)
+    public
     onlyOwner
     returns (bool isSuccess)
   {
     require(owners.length < maxOwners);
     require(msg.sender != newOwner && newOwner != address(0));
     owners.push(newOwner);
-    LogOwnerAdded(newOwner);
+    emit LogOwnerAdded(newOwner);
+
     return true;
   }
 
-  function getOwnersLength() public constant returns (uint) {
+  function getOwnersLength() public view returns (uint) {
     return owners.length;
   }
 
-  function getOwners() public constant returns (address[]) {
+  function getOwners() public view returns (address payable[] memory) {
     return owners;
   }
 
@@ -78,7 +80,8 @@ contract OwnableModified {
    * @dev Allows a current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
-  function transferOwnership(address newOwner)
+  function transferOwnership(address payable newOwner)
+    public
     onlyOwner
     returns (bool isSuccess)
   {
@@ -88,7 +91,7 @@ contract OwnableModified {
         owners[i] = newOwner;
       }
     }
-    LogOwnershipTransferred(msg.sender, newOwner);
+    emit LogOwnershipTransferred(msg.sender, newOwner);
     return true;
   }
 

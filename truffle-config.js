@@ -1,11 +1,11 @@
 module.exports = {
   networks: {
     development: {
-      host: "127.0.0.1",
+      host: "localhost",
       port: 8545,
       network_id: "*", // Match any network id
-      gas: 6000000000,   // <--- Twice as much
-      gasPrice: 10000000000,
+      gas: '6000000000',   // <--- Twice as much
+      gasPrice: '10000000000',
     },
     test: {
       host: "localhost",

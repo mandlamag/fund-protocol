@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity >=0.4.22 <0.6.0;
 
 
 import "./OwnableModified.sol";
@@ -14,16 +14,16 @@ import "./OwnableModified.sol";
  */
 contract DestructibleModified is OwnableModified {
 
-  function DestructibleModified() payable { } 
+  constructor() public payable { }
 
   /**
    * @dev Transfers the current balance to the owner and terminates the contract. 
    */
-  function destroy() onlyOwner {
+  function destroy() public onlyOwner {
     selfdestruct(owners[0]);
   }
 
-  function destroyAndSend(address _recipient) onlyOwner {
+  function destroyAndSend(address payable _recipient) public onlyOwner {
     selfdestruct(_recipient);
   }
 }
