@@ -1,6 +1,7 @@
-import HDWalletProvider from 'truffle-hdwallet-provider';
+const HDWalletProvider = require('truffle-hdwallet-provider');
 require('dotenv').config();
-export const networks = {
+module.exports = {
+  networks: {
   development: {
     host: "localhost",
     port: 8545,
@@ -18,10 +19,10 @@ export const networks = {
       return new HDWalletProvider(process.env.MNEMONIC, 'https://ropsten.infura.io/v3/' + process.env.INFURA_API_KEY);
     },
     network_id: 3,
-    gas: 5500000,
+    gas: 7500000,
     confirmations: 2,
     timeoutBlocks: 400,
-    skipDryRun: true // Skip dry run before migrations? (default: false for public nets )
+    skipDryRun: false // Skip dry run before migrations? (default: false for public nets )
   },
   mainnet: {
     host: "localhost",
@@ -29,4 +30,11 @@ export const networks = {
     network_id: "1",
     gasPrice: 20000000000,
   }
+  },
+solc: {
+        optimizer: {
+            enabled: true,
+            runs: 1000
+        },
+    }
 };

@@ -37,6 +37,7 @@ module.exports = function(deployer, network, accounts) {
   const ADMINISTRATOR = accounts[0];
   const MANAGER = accounts[0];
   const EXCHANGE = accounts[1];
+  const EXCHANGE_ROPSTEN = "0xC51be93CCcD7f5ffbE429b3738a1e0500719E048"
   
   // 
   const useOraclize = true;
@@ -85,8 +86,9 @@ module.exports = function(deployer, network, accounts) {
   } else {
 
     // Network-specific variables
-    const NAV_SERVICE_URL = dataFeedInfo[network].navServiceUrl;
-    const DATA_FEED_ADDRESS = dataFeedInfo[network].dataFeedAddress;
+    // const NAV_SERVICE_URL = dataFeedInfo[network].navServiceUrl;
+    // const DATA_FEED_ADDRESS = dataFeedInfo[network].dataFeedAddress;
+    const DATA_FEED_ADDRESS = "0xa0c93acce8fce9c15114cef6eb16d0ed1affaa61";
  
     // assume that DataFeed has already been deployed and has an updated value() property
     deployer.deploy(
@@ -102,15 +104,15 @@ module.exports = function(deployer, network, accounts) {
       deployer.deploy(
         Fund,
         MANAGER,                        // _manager
-        EXCHANGE,                       // _exchange
+        EXCHANGE_ROPSTEN,                       // _exchange
         NavCalculator.address,          // _navCalculator
         InvestorActions.address,        // _investorActions
         DATA_FEED_ADDRESS,              // _dataFeed
         FUND_NAME,                      // _name
         FUND_SYMBOL,                    // _symbol
         FUND_DECIMALS,                  // _decimals
-        ethToWei(MIN_INITIAL_SUBSCRIPTION_ETH) , // _minInitialSubscriptionEth
-        ethToWei(MIN_SUBSCRIPTION_ETH), // _minSubscriptionEth
+        MIN_INITIAL_WEI.toString(), // _minInitialSubscriptionEth
+        MIN_SUBSCRIPTION_WEI.toString(), // _minSubscriptionEth
         MIN_REDEMPTION_SHARES,          // _minRedemptionShares,
         ADMIN_FEE * 100,                // _adminFeeBps
         MGMT_FEE * 100,                 // _mgmtFeeBps

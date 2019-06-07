@@ -1,0 +1,72 @@
+const DataFeed  = artifacts.require("./DataFeed.sol");
+const NavCalculator  = artifacts.require("./NavCalculator.sol");
+const InvestorActions = artifacts.require("./InvestorActions.sol");
+const Fund = artifacts.require("./Fund.sol");
+
+const dataFeedInfo = require('./config/datafeed.js');
+
+// helpers
+const ethToWei = (eth) => eth * 1e18;
+
+// DataFeed settings
+const SECONDS_BETWEEN_QUERIES = 300;
+
+const USD_ETH_EXCHANGE_RATE         = 450;
+const USD_BTC_EXCHANGE_RATE         = 10000;
+const USD_LTC_EXCHANGE_RATE         = 100;
+const DATA_FEED_GAS_RESERVE         = 100;
+
+// Fund settings
+const FUND_NAME                     = "Solidity Capital Token";
+const FUND_SYMBOL                   = "SCT";
+const FUND_DECIMALS                 = 4;
+const MANAGER_USD_ETH_BASIS         = 300;
+const MIN_INITIAL_SUBSCRIPTION_ETH  = 20;
+const MIN_SUBSCRIPTION_ETH          = 5;
+const MIN_REDEMPTION_SHARES         = 100000;
+const ADMIN_FEE                     = 1;
+const MGMT_FEE                      = 0;
+const PERFORM_FEE                   = 20;
+
+let MIN_INITIAL_WEI = ethToWei(MIN_INITIAL_SUBSCRIPTION_ETH);
+let MIN_SUBSCRIPTION_WEI = ethToWei(MIN_SUBSCRIPTION_ETH);
+
+module.exports = function(deployer, network, accounts) {
+
+  // Accounts
+  const ADMINISTRATOR = accounts[0];
+  const MANAGER = accounts[0];
+  // const EXCHANGE = accounts[1];
+  const EXCHANGE_ROPSTEN = "0xC51be93CCcD7f5ffbE429b3738a1e0500719E048";
+  
+        const NavCalculator_Address = "0x24512F69a48ce7B912d52851d825E7de407c400E";          // _navCalculator
+        const InvestorActions_Address = "0xbB30c13Ba84C70408a5C1CE9630FcDD4eFb95B8E";        // _investorActions
+  // 
+  // const useOraclize = true;
+  // const dataFeedReserve = ethToWei(DATA_FEED_GAS_RESERVE);
+
+
+    // Network-specific variables
+    // const DATA_FEED_ADDRESS = dataFeedInfo[network].dataFeedAddress;
+    const FEED_ADDRESS = "0xa0c93acce8fce9c15114cef6eb16d0ed1affaa61";
+ 
+      deployer.deploy(
+        Fund,
+        MANAGER,                        // _manager
+        EXCHANGE_ROPSTEN,                       // _exchange
+        NavCalculator_Address,          // _navCalculator
+        InvestorActions_Address,        // _investorActions
+        FEED_ADDRESS,              // _dataFeed
+        FUND_NAME,                      // _name
+        FUND_SYMBOL,                    // _symbol
+        FUND_DECIMALS,                  // _decimals
+        MIN_INITIAL_WEI.toString(), // _minInitialSubscriptionEth
+        MIN_SUBSCRIPTION_WEI.toString(), // _minSubscriptionEth
+        MIN_REDEMPTION_SHARES,          // _minRedemptionShares,
+        ADMIN_FEE * 100,                // _adminFeeBps
+        MGMT_FEE * 100,                 // _mgmtFeeBps
+        PERFORM_FEE * 100,              // _performFeeBps
+        MANAGER_USD_ETH_BASIS * 100,    // _managerUsdEthBasis
+        { from: ADMINISTRATOR }
+    );
+};
