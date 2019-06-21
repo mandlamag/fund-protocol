@@ -3,75 +3,11 @@ pragma solidity >=0.4.22 <0.6.0;
 import "./NavCalculator.sol";
 import "./InvestorActions.sol";
 import "./DataFeed.sol";
+import "./IFund.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./zeppelin/DestructiblePausable.sol";
 
-/**
- * @title Fund
- * @author CoinAlpha, Inc. <contact@coinalpha.com>
- *
- * @dev A blockchain protocol for managed funds.
- * This protocol enables managers to create a blockchain-based asset management vehicle
- * that manages external funds contributed by investors. The protocol utilizes the blockchain
- * to perform functions such as segregated asset custody, net asset value calculation,
- * fee accounting, and subscription/redemption management.
- *
- * The goal of this project is to eliminate the setup and operational costs imposed by middlemen
- * in traditional funds, while maximizing transparency and mitigating fraud risk for investors.
- */
-
-contract IFund {
-  uint256    public decimals;
-  uint256    public minInitialSubscriptionEth;
-  uint256    public minSubscriptionEth;
-  uint256    public minRedemptionShares;
-  uint256    public totalEthPendingSubscription;
-  uint256    public totalEthPendingWithdrawal;
-  uint256    public totalSharesPendingRedemption;
-  uint256    public totalSupply;
-
-  uint    public adminFeeBps;
-  uint    public mgmtFeeBps;
-  uint    public performFeeBps;
-
-  uint    public lastCalcDate;
-  uint    public navPerShare;
-  uint    public accumulatedMgmtFees;
-  uint    public accumulatedAdminFees;
-  uint    public lossCarryforward;
-
-  function getInvestor(address _addr)
-    public
-    returns (
-      uint ethTotalAllocation,
-      uint ethPendingSubscription,
-      uint sharesOwned,
-      uint sharesPendingRedemption,
-      uint ethPendingWithdrawal
-    ) {}
-
-  function usdToEth(uint _usd) 
-    public
-    returns (uint eth) {}
-
-  function ethToUsd(uint _eth) 
-    public
-    returns (uint usd) {}
-
-  function ethToShares(uint _eth)
-    public
-    returns (uint shares) {}
-
-  function sharesToEth(uint _shares)
-    public
-    returns (uint ethAmount) {}
-
-  function getBalance()
-    public
-    returns (uint ethAmount) {}
-}
-
-contract Fund is DestructiblePausable {
+contract Fund is DestructiblePausable, IFund{
   using SafeMath for uint;
 
   // Constants set at contract inception
@@ -196,18 +132,18 @@ constructor(
     // Amounts are included in fee calculations since the fees are going to the manager anyway.
     // TestRPC: dataFeed.value should be zero
     // TestNet: ensure that the exchange account balance is zero or near zero
-    uint managerShares = ethToShares(exchange.balance) + dataFeed.value();
+    uint managerShares = this.ethToShares(exchange.balance) + dataFeed.value();
     totalSupply = managerShares;
-    investors[manager].ethTotalAllocation = sharesToEth(managerShares);
+    investors[manager].ethTotalAllocation = this.sharesToEth(managerShares);
     investors[manager].sharesOwned = managerShares;
 
-    emit LogAllocationModification(manager, sharesToEth(managerShares));
+    emit LogAllocationModification(manager, this.sharesToEth(managerShares));
     emit LogSubscription(manager, managerShares, navPerShare, _managerUsdEthBasis);
   }
 
   // [INVESTOR METHOD] Returns the variables contained in the Investor struct for a given address
   function getInvestor(address _addr)
-    public
+    external
     view
     returns (
       uint ethTotalAllocation,
@@ -218,7 +154,8 @@ constructor(
     )
   {
     Investor storage investor = investors[_addr];
-    return (investor.ethTotalAllocation, investor.ethPendingSubscription, investor.sharesOwned, investor.sharesPendingRedemption, investor.ethPendingWithdrawal);
+    return (investor.ethTotalAllocation, investor.ethPendingSubscription,
+     investor.sharesOwned, investor.sharesPendingRedemption, investor.ethPendingWithdrawal);
   }
 
   // ********* SUBSCRIPTIONS *********
@@ -226,7 +163,7 @@ constructor(
   // Modifies the max investment limit allowed for an investor
   // Delegates logic to the InvestorActions module
   function modifyAllocation(address _investorAddress, uint _allocation)
-    public
+    external
     returns (bool success)
   {
     // Adds the investor to investorAddresses array if their previous allocation was zero
@@ -254,7 +191,7 @@ constructor(
   // [INVESTOR METHOD] External wrapper for the getAvailableAllocation function in InvestorActions
   // Delegates logic to the InvestorActions module
   function getAvailableAllocation(address _addr)
-    public
+    external
     returns (uint ethAvailableAllocation)
   {
     return investorActions.getAvailableAllocation(_addr);
@@ -265,13 +202,13 @@ constructor(
     external
     payable
     onlyFromExchange
-  { remitFromExchange(); }
+  { this.remitFromExchange(); }
 
   // [INVESTOR METHOD] Issue a subscription request by transferring ether into the fund
   // Delegates logic to the InvestorActions module
   // usdEthBasis is expressed in USD cents.  For example, for a rate of 300.01, _usdEthBasis = 30001
   function requestSubscription(uint _usdEthBasis)
-    public
+    external
     whenNotPaused
     payable
     returns (bool success)
@@ -287,7 +224,7 @@ constructor(
   // [INVESTOR METHOD] Cancels a subscription request
   // Delegates logic to the InvestorActions module
   function cancelSubscription()
-    public
+    external
     whenNotPaused
     returns (bool success)
   {
@@ -309,7 +246,8 @@ constructor(
     internal
     returns (bool success)
   {
-   (uint ethPendingSubscription, uint sharesOwned, uint shares, uint transferAmount, uint _totalSupply, uint _totalEthPendingSubscription) = investorActions.subscribe(_addr);
+   (uint ethPendingSubscription, uint sharesOwned, uint shares, uint transferAmount,
+    uint _totalSupply, uint _totalEthPendingSubscription) = investorActions.subscribe(_addr);
     investors[_addr].ethPendingSubscription = ethPendingSubscription;
     investors[_addr].sharesOwned = sharesOwned;
     totalSupply = _totalSupply;
@@ -321,7 +259,7 @@ constructor(
     return true;
   }
   function subscribeInvestor(address _addr)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -333,7 +271,7 @@ constructor(
   // *Note re: gas - if there are too many investors (i.e. this process exceeds gas limits),
   //                 fallback is to subscribe() each individually
   function fillAllSubscriptionRequests()
-    public
+    external
     onlyOwner
     returns (bool allSubscriptionsFilled)
   {
@@ -350,17 +288,17 @@ constructor(
 
   // Returns the total redemption requests not yet processed by the manager, denominated in ether
   function totalEthPendingRedemption()
-    public
+    external
     view
     returns (uint)
   {
-    return sharesToEth(totalSharesPendingRedemption);
+    return this.sharesToEth(totalSharesPendingRedemption);
   }
 
   // [INVESTOR METHOD] Issue a redemption request
   // Delegates logic to the InvestorActions module
   function requestRedemption(uint _shares)
-    public
+    external
     whenNotPaused
     returns (bool success)
   {
@@ -375,7 +313,7 @@ constructor(
   // [INVESTOR METHOD] Cancels a redemption request
   // Delegates logic to the InvestorActions module
   function cancelRedemption()
-    public
+    external
     returns (bool success)
   {
     (uint _sharesPendingRedemption,uint  _totalSharesPendingRedemption) = investorActions.cancelRedemption(msg.sender);
@@ -393,7 +331,7 @@ constructor(
     internal
     returns (bool success)
   {
-   (uint sharesOwned,uint  sharesPendingRedemption,uint ethPendingWithdrawal, uint shares, 
+   (uint sharesOwned,uint  sharesPendingRedemption,uint ethPendingWithdrawal, uint shares,
    uint _totalSupply, uint _totalSharesPendingRedemption, uint _totalEthPendingWithdrawal) = investorActions.redeem(_addr);
     investors[_addr].sharesOwned = sharesOwned;
     investors[_addr].sharesPendingRedemption = sharesPendingRedemption;
@@ -406,7 +344,7 @@ constructor(
     return true;
   }
   function redeemInvestor(address _addr)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -418,11 +356,11 @@ constructor(
   // Delegates logic to the InvestorActions module
   // See note on gas/for loop in fillAllSubscriptionRequests
   function fillAllRedemptionRequests()
-    public
+    external
     onlyOwner
     returns (bool success)
   {
-    require(totalEthPendingRedemption() <= address(this).balance.sub(totalEthPendingWithdrawal).sub(totalEthPendingSubscription),
+    require(this.totalEthPendingRedemption() <= address(this).balance.sub(totalEthPendingWithdrawal).sub(totalEthPendingSubscription),
     "invalid total eth pending redemption");
 
     for (uint i = 0; i < investorAddresses.length; i++) {
@@ -459,7 +397,7 @@ constructor(
     return true;
   }
   function liquidateInvestor(address _addr)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -470,7 +408,7 @@ constructor(
   // Liquidates all investors
   // See note on gas/for loop in fillAllSubscriptionRequests
   function liquidateAllInvestors()
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -486,7 +424,7 @@ constructor(
   // Withdraw payment in the ethPendingWithdrawal balance
   // Delegates logic to the InvestorActions module
   function withdrawPayment()
-    public
+    external
     whenNotPaused
     returns (bool success)
   {
@@ -506,7 +444,7 @@ constructor(
   // and accumulated management fee balaces.
   // Delegates logic to the NavCalculator module
   function calcNav()
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -532,13 +470,13 @@ constructor(
 
   // Withdraw management fees from the contract
   function withdrawMgmtFees()
-    public
+    external
     whenNotPaused
     onlyManager
     returns (bool success)
   {
-    uint ethWithdrawal = usdToEth(accumulatedMgmtFees);
-    require(ethWithdrawal <= getBalance());
+    uint ethWithdrawal = this.usdToEth(accumulatedMgmtFees);
+    require(ethWithdrawal <= this.getBalance(), "Insuffient balance to perform this action");
 
     address payable payee = msg.sender;
 
@@ -550,13 +488,13 @@ constructor(
 
   // Withdraw management fees from the contract
   function withdrawAdminFees()
-    public
+    external
     whenNotPaused
     onlyOwner
     returns (bool success)
   {
-    uint ethWithdrawal = usdToEth(accumulatedAdminFees);
-    require(ethWithdrawal <= getBalance());
+    uint ethWithdrawal = this.usdToEth(accumulatedAdminFees);
+    require(ethWithdrawal <= this.getBalance(), "Insuffient balance to perform this action");
 
     address payable payee = msg.sender;
 
@@ -570,7 +508,7 @@ constructor(
 
   // Returns a list of all investor addresses
   function getInvestorAddresses()
-    public
+    external
     view
     onlyOwner
     returns (address[] memory)
@@ -580,12 +518,12 @@ constructor(
 
   // Update the address of the manager account
   function setManager(address _addr)
-    public
+    external
     whenNotPaused
     onlyManager
     returns (bool success)
   {
-    require(_addr != address(0));
+    require(_addr != address(0), "Valid address is required!");
     address old = manager;
     manager = _addr;
     emit LogManagerAddressChanged(old, _addr);
@@ -594,7 +532,7 @@ constructor(
 
   // Update the address of the exchange account
   function setExchange(address payable _addr)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -607,7 +545,7 @@ constructor(
 
   // Update the address of the NAV Calculator module
   function setNavCalculator(address _addr)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -620,7 +558,7 @@ constructor(
 
   // Update the address of the Investor Actions module
   function setInvestorActions(address _addr)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -632,10 +570,10 @@ constructor(
   }
 
   // Update the address of the data feed contract
-  function setDataFeed(address _addr) 
-    public
+  function setDataFeed(address _addr)
+    external
     onlyOwner
-    returns (bool success) 
+    returns (bool success)
   {
     require(_addr != address(0), "Valid address is required!");
     IDataFeed old = dataFeed;
@@ -646,7 +584,7 @@ constructor(
 
   // Utility function for exchange to send funds to contract
   function remitFromExchange()
-    public
+    external
     payable
     onlyFromExchange
     returns (bool success)
@@ -657,7 +595,7 @@ constructor(
 
   // Utility function for contract to send funds to exchange
   function sendToExchange(uint amount)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -672,33 +610,33 @@ constructor(
 
   // Converts ether to a corresponding number of shares based on the current nav per share
   function ethToShares(uint _eth)
-    public
+    external
     view
     returns (uint shares)
   {
-    return ethToUsd(_eth).mul(10 ** decimals).div(navPerShare);
+    return this.ethToUsd(_eth).mul(10 ** decimals).div(navPerShare);
   }
 
   // Converts shares to a corresponding amount of ether based on the current nav per share
   function sharesToEth(uint _shares)
-    public
+    external
     view
     returns (uint ethAmount)
   {
-    return usdToEth(_shares.mul(navPerShare).div(10 ** decimals));
+    return this.usdToEth(_shares.mul(navPerShare).div(10 ** decimals));
   }
 
-  function usdToEth(uint _usd) 
-    public
-    view 
+  function usdToEth(uint _usd)
+    external
+    view
     returns (uint eth)
   {
     return _usd.mul(1e18).div(dataFeed.usdEth());
   }
 
-  function ethToUsd(uint _eth) 
-    public
-    view 
+  function ethToUsd(uint _eth)
+    external
+    view
     returns (uint usd)
   {
     return _eth.mul(dataFeed.usdEth()).div(1e18);
@@ -706,7 +644,7 @@ constructor(
 
   // Returns the fund's balance less pending subscriptions and withdrawals
   function getBalance()
-    public
+    external
     view
     returns (uint ethAmount)
   {

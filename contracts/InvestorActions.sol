@@ -1,50 +1,40 @@
 pragma solidity >=0.4.22 <0.6.0;
 
-import "./Fund.sol";
+import "./IFund.sol";
 import "./DataFeed.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./zeppelin/DestructibleModified.sol";
 
-/**
- * @title InvestorActions
- * @author CoinAlpha, Inc. <contact@coinalpha.com>
- *
- * @dev This is a supporting module to the Fund contract that performs investor-related actions
- * such as subscription, redemption, allocation changes, and withdrawals.  By performing checks,
- * performing calculations and returning the updated variables to the Fund contract, this module
- * may be upgraded after the inception of the Fund contract.
- */
-
 contract IInvestorActions {
-  function modifyAllocation(address _addr, uint _allocation) public
-    returns (uint _ethTotalAllocation) {}
+  function modifyAllocation(address _addr, uint _allocation) external
+    returns (uint _ethTotalAllocation);
 
-  function getAvailableAllocation(address _addr) public
-    returns (uint ethAvailableAllocation) {}
+  function getAvailableAllocation(address _addr) external
+    returns (uint ethAvailableAllocation);
 
-  function requestSubscription(address _addr, uint _amount) public
-    returns (uint, uint) {}
+  function requestSubscription(address _addr, uint _amount) external
+    returns (uint, uint);
 
-  function cancelSubscription(address _addr) public
-    returns (uint, uint, uint, uint) {}
+  function cancelSubscription(address _addr) external
+    returns (uint, uint, uint, uint);
+
+  function subscribe(address _addr) external
+    returns (uint, uint, uint, uint, uint, uint);
   
-  function subscribe(address _addr) public
-    returns (uint, uint, uint, uint, uint, uint) {}
-  
-  function requestRedemption(address _addr, uint _shares) public
-    returns (uint, uint) {}
+  function requestRedemption(address _addr, uint _shares) external
+    returns (uint, uint);
 
-  function cancelRedemption(address addr) public
-    returns (uint, uint) {}
+  function cancelRedemption(address addr) external
+    returns (uint, uint);
 
-  function redeem(address _addr) public
-    returns (uint, uint, uint, uint, uint, uint, uint) {}
-  
-  function liquidate(address _addr) public
-    returns (uint, uint, uint, uint, uint, uint) {}
+  function redeem(address _addr) external
+    returns (uint, uint, uint, uint, uint, uint, uint);
 
-  function withdraw(address _addr) public
-    returns (uint, uint, uint) {}
+  function liquidate(address _addr) external
+    returns (uint, uint, uint, uint, uint, uint);
+
+  function withdraw(address _addr) external
+    returns (uint, uint, uint);
 
 }
 
@@ -64,7 +54,7 @@ contract InvestorActions is DestructibleModified {
     _;
   }
 
-  constructor( address _dataFeed) public
+  constructor(address _dataFeed) public
   {
     dataFeed = IDataFeed(_dataFeed);
   }
@@ -72,7 +62,7 @@ contract InvestorActions is DestructibleModified {
   // Modifies the max investment limit allowed for an investor and overwrites the past limit
   // Used for both whitelisting a new investor and modifying an existing investor's allocation
   function modifyAllocation(address _addr, uint _allocation)
-    public
+    external
     onlyFund
     returns (uint _ethTotalAllocation)
   {
@@ -82,7 +72,7 @@ contract InvestorActions is DestructibleModified {
 
   // Get the remaining available amount in Ether that an investor can subscribe for
   function getAvailableAllocation(address _addr)
-    public
+    external
     onlyFund
     returns (uint ethAvailableAllocation)
   {
@@ -102,7 +92,7 @@ contract InvestorActions is DestructibleModified {
   // 1) the requested amount exceeds the minimum subscription amount and
   // 2) the investor's total allocation is not exceeded
   function requestSubscription(address _addr, uint _amount)
-    public
+    external
     onlyFund
     returns (uint, uint)
   {
@@ -127,7 +117,7 @@ contract InvestorActions is DestructibleModified {
   // The amount is then moved from ethPendingSubscription to ethPendingWithdrawal
   // so that it can be withdrawn by the investor.
   function cancelSubscription(address _addr)
-    public
+    external
     onlyFund
     returns (uint, uint, uint, uint)
   {
@@ -146,7 +136,7 @@ contract InvestorActions is DestructibleModified {
 
   // Processes an investor's subscription request and mints new shares at the current navPerShare
   function subscribe(address _addr)
-    public
+    external
     onlyFund
     returns (uint, uint, uint, uint, uint, uint)
   {
@@ -174,7 +164,7 @@ contract InvestorActions is DestructibleModified {
   // 1) the requested amount exceeds the minimum redemption amount and
   // 2) the investor can't redeem more than the shares they own
   function requestRedemption(address _addr, uint _shares)
-    public
+    external
     onlyFund
     returns (uint, uint)
   {
@@ -198,7 +188,7 @@ contract InvestorActions is DestructibleModified {
   // the fund balance has enough ether to cover the withdrawal.
   // The amount is then moved from sharesPendingRedemption
   function cancelRedemption(address _addr)
-    public
+    external
     onlyFund
     returns (uint, uint)
   {
@@ -215,7 +205,7 @@ contract InvestorActions is DestructibleModified {
 
   // Processes an investor's redemption request and annilates their shares at the current navPerShare
   function redeem(address _addr)
-    public
+    external
     onlyFund
     returns (uint, uint, uint, uint, uint, uint, uint)
   {
@@ -239,7 +229,7 @@ contract InvestorActions is DestructibleModified {
 
   // Converts all of an investor's shares to ether and makes it available for withdrawal.  Also makes the investor's allocation zero to prevent future investment.
   function liquidate(address _addr)
-    public
+    external
     onlyFund
     returns (uint, uint, uint, uint, uint, uint)
   {
@@ -264,7 +254,7 @@ contract InvestorActions is DestructibleModified {
 
   // Handles a withdrawal by an investor
   function withdraw(address _addr)
-    public
+    external
     onlyFund
     returns (uint, uint, uint)
   {
@@ -287,7 +277,7 @@ contract InvestorActions is DestructibleModified {
 
   // Update the address of the Fund contract
   function setFund(address _fundAddress)
-    public
+    external
     onlyOwner
     returns (bool success)
   {
@@ -298,7 +288,7 @@ contract InvestorActions is DestructibleModified {
 
   // Update the address of the data feed contract
   function setDataFeed(address _address) 
-    public
+    external
     onlyOwner 
     returns (bool success)
   {
