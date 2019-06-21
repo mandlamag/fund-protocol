@@ -64,7 +64,7 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     returns (uint, uint)
   {
     (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+     uint256 sharesOwned,,) = fund.getInvestor(_addr);
 
 
     if (sharesOwned == 0) {
@@ -73,7 +73,7 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
       require(_amount >= fund.minSubscriptionEth(), "Error: Amount less than required minimum subscription");
     }
     require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)),
-     "Total ETH allocation is not greater than added values");
+     "Investor Total allocation has been exceeded");
 
     return (ethPendingSubscription.add(_amount),                                 // new investor.ethPendingSubscription
             fund.totalEthPendingSubscription().add(_amount)                      // new totalEthPendingSubscription
@@ -89,11 +89,11 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     onlyFund
     returns (uint, uint, uint, uint)
   {
-    (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+    (, uint256 ethPendingSubscription,,, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
 
     uint otherPendingSubscriptions = fund.totalEthPendingSubscription().sub(ethPendingSubscription);
-    require(ethPendingSubscription <= address(fund).balance.sub(fund.totalEthPendingWithdrawal()).sub(otherPendingSubscriptions));
+    require(ethPendingSubscription <= address(fund).balance.sub(fund.totalEthPendingWithdrawal()).sub(otherPendingSubscriptions),
+    "Fund balance does not have enough ETH to cover withdrawal");
 
     return (0,                                                                  // new investor.ethPendingSubscription
             ethPendingWithdrawal.add(ethPendingSubscription),                   // new investor.ethPendingWithdrawal
@@ -108,15 +108,14 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     onlyFund
     returns (uint, uint, uint, uint, uint, uint)
   {
-    (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+    (, uint256 ethPendingSubscription,uint256 sharesOwned,,) = fund.getInvestor(_addr);
 
     // Check that the fund balance has enough ether because the Fund contract's subscribe
     // function that calls this one will immediately transfer the subscribed amount of ether
     // to the exchange account upon function return
     uint otherPendingSubscriptions = fund.totalEthPendingSubscription().sub(ethPendingSubscription);
     require(ethPendingSubscription <=
-    address(fund).balance.sub(fund.totalEthPendingWithdrawal()).sub(otherPendingSubscriptions), "Eth Pending Subscription invalid");
+    address(fund).balance.sub(fund.totalEthPendingWithdrawal()).sub(otherPendingSubscriptions), "Fund balance is not enough to add new subscription");
     uint shares = fund.ethToShares(ethPendingSubscription);
 
     return (0,                                                                  // new investor.ethPendingSubscription
@@ -136,16 +135,14 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     onlyFund
     returns (uint, uint)
   {
-    require(_shares >= fund.minRedemptionShares());
+    require(_shares >= fund.minRedemptionShares(), "Redemption amount must exeeed minimum redemption amount");
 
-    (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
-
-
+    (,, uint256 sharesOwned,uint256 sharesPendingRedemption,) = fund.getInvestor(_addr);
 
     // Investor's shares owned should be larger than their existing redemption requests
     // plus this new redemption request
-    require(sharesOwned >= _shares.add(sharesPendingRedemption));
+    require(sharesOwned >= _shares.add(sharesPendingRedemption),
+    "Investor's shares owned does not exceeed their existing redemption request");
 
     return (sharesPendingRedemption.add(_shares),                                // new investor.sharesPendingRedemption
             fund.totalSharesPendingRedemption().add(_shares)                     // new totalSharesPendingRedemption
@@ -160,8 +157,7 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     onlyFund
     returns (uint, uint)
   {
-    (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+    (,,, uint256 sharesPendingRedemption,) = fund.getInvestor(_addr);
 
     // Check that the total shares pending redemption is greator than the investor's shares pending redemption
     assert(fund.totalSharesPendingRedemption() >= sharesPendingRedemption);
@@ -177,13 +173,13 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     onlyFund
     returns (uint, uint, uint, uint, uint, uint, uint)
   {
-    (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+    (,,uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
 
     // Check that the fund balance has enough ether because after this function is processed, the ether
     // equivalent amount can be withdrawn by the investor
     uint amount = fund.sharesToEth(sharesPendingRedemption);
-    require(amount <= address(fund).balance.sub(fund.totalEthPendingSubscription()).sub(fund.totalEthPendingWithdrawal()));
+    require(amount <= address(fund).balance.sub(fund.totalEthPendingSubscription()).sub(fund.totalEthPendingWithdrawal()),
+     "Insuffient Fund balance to perform this action");
 
     return (sharesOwned.sub(sharesPendingRedemption),                           // new investor.sharesOwned
             0,                                                                  // new investor.sharesPendingRedemption
@@ -201,15 +197,16 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     onlyFund
     returns (uint, uint, uint, uint, uint, uint)
   {
-    (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+    (,uint256 ethPendingSubscription, uint256 sharesOwned,
+    uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
 
     // Check that the fund balance has enough ether because after this function is processed, the ether
     // equivalent amount can be withdrawn by the investor.  The fund balance less total withdrawals and other
     // investors' pending subscriptions should be larger than or equal to the liquidated amount.
     uint otherPendingSubscriptions = fund.totalEthPendingSubscription().sub(ethPendingSubscription);
     uint amount = fund.sharesToEth(sharesOwned).add(ethPendingSubscription);
-    require(amount <= address(fund).balance.sub(fund.totalEthPendingWithdrawal()).sub(otherPendingSubscriptions));
+    require(amount <= address(fund).balance.sub(fund.totalEthPendingWithdrawal()).sub(otherPendingSubscriptions),
+    "Insuffient Fund balance to perform this action");
 
     return (ethPendingWithdrawal.add(amount),                                   // new investor.ethPendingWithdrawal
             sharesOwned,                                                        // shares annihilated
@@ -226,14 +223,14 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     onlyFund
     returns (uint, uint, uint)
   {
-    (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+    (,,,, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
 
     // Check that the fund balance has enough ether to cover the withdrawal after subtracting pending subscriptions
     // and other investors' withdrawals
-    require(ethPendingWithdrawal != 0);
+    require(ethPendingWithdrawal > 0, "Pending withdrawal amount must be greater than 0");
     uint otherInvestorPayments = fund.totalEthPendingWithdrawal().sub(ethPendingWithdrawal);
-    require(ethPendingWithdrawal <= address(fund).balance.sub(fund.totalEthPendingSubscription()).sub(otherInvestorPayments));
+    require(ethPendingWithdrawal <= address(fund).balance.sub(fund.totalEthPendingSubscription()).sub(otherInvestorPayments),
+    "Insufficient fund balance to perform the withdrawal action");
 
     return (ethPendingWithdrawal,                                               // payment to be sent
             0,                                                                  // new investor.ethPendingWithdrawal
@@ -255,9 +252,9 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
   }
 
   // Update the address of the data feed contract
-  function setDataFeed(address _address) 
+  function setDataFeed(address _address)
     external
-    onlyOwner 
+    onlyOwner
     returns (bool success)
   {
     dataFeed = IDataFeed(_address);
