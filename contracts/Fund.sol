@@ -132,12 +132,12 @@ constructor(
     // Amounts are included in fee calculations since the fees are going to the manager anyway.
     // TestRPC: dataFeed.value should be zero
     // TestNet: ensure that the exchange account balance is zero or near zero
-    uint managerShares = this.ethToShares(exchange.balance) + dataFeed.value();
+    uint managerShares = ethToShares(exchange.balance) + dataFeed.value();
     totalSupply = managerShares;
-    investors[manager].ethTotalAllocation = this.sharesToEth(managerShares);
+    investors[manager].ethTotalAllocation = sharesToEth(managerShares);
     investors[manager].sharesOwned = managerShares;
 
-    emit LogAllocationModification(manager, this.sharesToEth(managerShares));
+    emit LogAllocationModification(manager, sharesToEth(managerShares));
     emit LogSubscription(manager, managerShares, navPerShare, _managerUsdEthBasis);
   }
 
@@ -181,7 +181,7 @@ constructor(
         investorAddresses.push(_investorAddress);
       }
     }
-    uint ethTotalAllocation = investorActions.modifyAllocation(_investorAddress, _allocation);
+    uint ethTotalAllocation = investorActions.modifyAllocation(_allocation);
     investors[_investorAddress].ethTotalAllocation = ethTotalAllocation;
 
     emit LogAllocationModification(_investorAddress, _allocation);
@@ -476,7 +476,7 @@ constructor(
     returns (bool success)
   {
     uint ethWithdrawal = this.usdToEth(accumulatedMgmtFees);
-    require(ethWithdrawal <= this.getBalance(), "Insuffient balance to perform this action");
+    require(ethWithdrawal <= getBalance(), "Insuffient balance to perform this action");
 
     address payable payee = msg.sender;
 
@@ -494,7 +494,7 @@ constructor(
     returns (bool success)
   {
     uint ethWithdrawal = this.usdToEth(accumulatedAdminFees);
-    require(ethWithdrawal <= this.getBalance(), "Insuffient balance to perform this action");
+    require(ethWithdrawal <= getBalance(), "Insuffient balance to perform this action");
 
     address payable payee = msg.sender;
 
@@ -610,24 +610,24 @@ constructor(
 
   // Converts ether to a corresponding number of shares based on the current nav per share
   function ethToShares(uint _eth)
-    external
+    public
     view
     returns (uint shares)
   {
-    return this.ethToUsd(_eth).mul(10 ** decimals).div(navPerShare);
+    return ethToUsd(_eth).mul(10 ** decimals).div(navPerShare);
   }
 
   // Converts shares to a corresponding amount of ether based on the current nav per share
   function sharesToEth(uint _shares)
-    external
+    public
     view
     returns (uint ethAmount)
   {
-    return this.usdToEth(_shares.mul(navPerShare).div(10 ** decimals));
+    return usdToEth(_shares.mul(navPerShare).div(10 ** decimals));
   }
 
   function usdToEth(uint _usd)
-    external
+    public
     view
     returns (uint eth)
   {
@@ -635,7 +635,7 @@ constructor(
   }
 
   function ethToUsd(uint _eth)
-    external
+    public
     view
     returns (uint usd)
   {
@@ -644,7 +644,7 @@ constructor(
 
   // Returns the fund's balance less pending subscriptions and withdrawals
   function getBalance()
-    external
+    public
     view
     returns (uint ethAmount)
   {

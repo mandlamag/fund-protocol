@@ -1,44 +1,12 @@
 pragma solidity >=0.4.22 <0.6.0;
 
 import "./IFund.sol";
+import "./IInvestorActions.sol";
 import "./DataFeed.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./zeppelin/DestructibleModified.sol";
 
-contract IInvestorActions {
-  function modifyAllocation(address _addr, uint _allocation) external
-    returns (uint _ethTotalAllocation);
-
-  function getAvailableAllocation(address _addr) external
-    returns (uint ethAvailableAllocation);
-
-  function requestSubscription(address _addr, uint _amount) external
-    returns (uint, uint);
-
-  function cancelSubscription(address _addr) external
-    returns (uint, uint, uint, uint);
-
-  function subscribe(address _addr) external
-    returns (uint, uint, uint, uint, uint, uint);
-  
-  function requestRedemption(address _addr, uint _shares) external
-    returns (uint, uint);
-
-  function cancelRedemption(address addr) external
-    returns (uint, uint);
-
-  function redeem(address _addr) external
-    returns (uint, uint, uint, uint, uint, uint, uint);
-
-  function liquidate(address _addr) external
-    returns (uint, uint, uint, uint, uint, uint);
-
-  function withdraw(address _addr) external
-    returns (uint, uint, uint);
-
-}
-
-contract InvestorActions is DestructibleModified {
+contract InvestorActions is DestructibleModified, IInvestorActions {
   using SafeMath for uint;
 
   address public fundAddress;
@@ -47,21 +15,20 @@ contract InvestorActions is DestructibleModified {
   IDataFeed public dataFeed;
   IFund fund;
 
+  constructor(address _dataFeed) public
+  {
+    dataFeed = IDataFeed(_dataFeed);
+  }
+
   // This modifier is applied to all external methods in this contract since only
   // the primary Fund contract can use this module
   modifier onlyFund {
     require(msg.sender == fundAddress, "Access denied. Only fund allowed");
     _;
   }
-
-  constructor(address _dataFeed) public
-  {
-    dataFeed = IDataFeed(_dataFeed);
-  }
-
   // Modifies the max investment limit allowed for an investor and overwrites the past limit
   // Used for both whitelisting a new investor and modifying an existing investor's allocation
-  function modifyAllocation(address _addr, uint _allocation)
+  function modifyAllocation(uint _allocation)
     external
     onlyFund
     returns (uint _ethTotalAllocation)
@@ -77,7 +44,7 @@ contract InvestorActions is DestructibleModified {
     returns (uint ethAvailableAllocation)
   {
     (uint256 ethTotalAllocation, uint256 ethPendingSubscription,
-     uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
+     uint256 sharesOwned,,) = fund.getInvestor(_addr);
 
     uint ethFilledAllocation = ethPendingSubscription.add(fund.sharesToEth(sharesOwned));
 
@@ -100,12 +67,13 @@ contract InvestorActions is DestructibleModified {
      uint256 sharesOwned,uint256 sharesPendingRedemption, uint256 ethPendingWithdrawal) = fund.getInvestor(_addr);
 
 
-    // if (sharesOwned == 0) {
-    //   require(_amount >= fund.minInitialSubscriptionEth());
-    // } else {
-    //   require(_amount >= fund.minSubscriptionEth());
-    // }
-    // require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)));
+    if (sharesOwned == 0) {
+      require(_amount >= fund.minInitialSubscriptionEth(), "Error: Amount less than required minimum initial subscription");
+    } else {
+      require(_amount >= fund.minSubscriptionEth(), "Error: Amount less than required minimum subscription");
+    }
+    require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)),
+     "Total ETH allocation is not greater than added values");
 
     return (ethPendingSubscription.add(_amount),                                 // new investor.ethPendingSubscription
             fund.totalEthPendingSubscription().add(_amount)                      // new totalEthPendingSubscription

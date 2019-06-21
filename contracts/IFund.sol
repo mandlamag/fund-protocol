@@ -32,27 +32,27 @@ contract IFund {
     );
 
   function usdToEth(uint _usd)
-    external
+    public
     view
     returns (uint eth);
 
   function ethToUsd(uint _eth)
-    external
+    public
     view
     returns (uint usd);
 
   function ethToShares(uint _eth)
-    external
+    public
     view
     returns (uint shares);
 
   function sharesToEth(uint _shares)
-    external
+    public
     view
     returns (uint ethAmount);
 
   function getBalance()
-    external
+    public
     view
     returns (uint ethAmount);
 }
