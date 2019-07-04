@@ -1,5 +1,6 @@
 const path = require('path');
 const Promise = require('bluebird');
+const BN = require('bn.js');
 
 const Fund = artifacts.require('./Fund.sol');
 const NavCalculator = artifacts.require('./NavCalculator.sol');
@@ -15,13 +16,12 @@ if (typeof web3.eth.getAccountsPromise === 'undefined') {
 contract('Initialize Fund', (accounts) => {
   // helpers
   const getBalancePromise = address => web3.eth.getBalancePromise(address);
-  const weiToNum = wei => web3.fromWei(wei, 'ether').toNumber();
-  const ethToWei = eth => web3.toWei(eth, 'ether');
+const ethToWei = eth => eth * 1e18;
 
   const OWNER = accounts[0];
   const MANAGER = accounts[0];
   const EXCHANGE = accounts[1];
-  const INITIAL_NAV = web3.toWei(1, 'ether');
+  const INITIAL_NAV = ethToWei(1);
 
   const GAS_AMT = 500000;
   const USD_ETH_EXCHANGE_RATE = 450;
@@ -72,7 +72,7 @@ contract('Initialize Fund', (accounts) => {
         'TestFund',                         // _name
         'TEST',                             // _symbol
         4,                                  // _decimals
-        ethToWei(MIN_INITIAL_SUBSCRIPTION), // _minInitialSubscriptionEth
+        new BN(ethToWei(MIN_INITIAL_SUBSCRIPTION)), // _minInitialSubscriptionEth
         ethToWei(MIN_SUBSCRIPTION),         // _minSubscriptionEth
         MIN_REDEMPTION_SHARES,              // _minRedemptionShares,
         ADMIN_FEE * 100,                    // _adminFeeBps

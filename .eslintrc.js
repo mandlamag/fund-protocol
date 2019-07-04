@@ -4,18 +4,18 @@ module.exports = {
         "comma-dangle" : ["error", {
             "functions": "ignore"
         }],
-        "no-console": "off",
+        "no-console": 'off',
         "no-multi-spaces": ["error", { ignoreEOLComments: true }],
         "no-return-assign": "off",
         "no-unused-vars": ["off", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false }],
         "max-len": ["error", {"code": 150}],
-        "prefer-destructuring": ["off", {
+        'prefer-destructuring': ["on", {
             "array": true,
             "object": true
         }]
     },
     "globals": {
-        "artifacts" : true,
+        'artifacts' : true,
         "assert" : true,
         "before" : true,
         "beforeEach" : true,

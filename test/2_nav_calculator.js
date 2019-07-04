@@ -1,4 +1,4 @@
-\const path = require('path');
+const path = require('path');
 const Promise = require('bluebird');
 
 const Fund = artifacts.require('./Fund.sol');

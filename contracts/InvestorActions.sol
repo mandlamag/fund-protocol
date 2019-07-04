@@ -72,8 +72,8 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
     } else {
       require(_amount >= fund.minSubscriptionEth(), "Error: Amount less than required minimum subscription");
     }
-    require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)),
-     "Investor Total allocation has been exceeded");
+    // require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)),
+    //  "Investor Total allocation has been exceeded");
 
     return (ethPendingSubscription.add(_amount),                                 // new investor.ethPendingSubscription
             fund.totalEthPendingSubscription().add(_amount)                      // new totalEthPendingSubscription

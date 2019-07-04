@@ -1,7 +1,7 @@
 pragma solidity >=0.4.22 <0.6.0;
 
 import "./NavCalculator.sol";
-import "./InvestorActions.sol";
+import "./IInvestorActions.sol";
 import "./DataFeed.sol";
 import "./IFund.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -213,6 +213,7 @@ constructor(
     payable
     returns (bool success)
   {
+    emit LogSubscriptionRequest(msg.sender, msg.value, _usdEthBasis);
     (uint _ethPendingSubscription, uint _totalEthPendingSubscription) = investorActions.requestSubscription(msg.sender, msg.value);
     investors[msg.sender].ethPendingSubscription = _ethPendingSubscription;
     totalEthPendingSubscription = _totalEthPendingSubscription;

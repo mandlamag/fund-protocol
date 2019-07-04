@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const DataFeed = artifacts.require('./DataFeed.sol');
 
 const scriptName = path.basename(__filename);
+const ethToWei = eth => eth * 1e18;
 
 if (typeof web3.eth.getAccountsPromise === "undefined") {
   Promise.promisifyAll(web3.eth, { suffix: "Promise" });
@@ -188,7 +189,7 @@ contract(`****** START TEST [ ${scriptName} ]*******`, (accounts) => {
         .catch((err) => {
           if (err !== 'already using Oraclize') assert.throw(err.toString());
         })
-        .then(() => dataFeed.updateWithOraclize({ from: MANAGER, value: web3.toWei(0.5, 'ether') }))
+        .then(() => dataFeed.updateWithOraclize({ from: MANAGER, value: ethToWei(0.5, 'ether') }))
         .then((txObj) => {
           assert.strictEqual(txObj.logs.length, 1, 'error: incorrect number of events logged');
           assert.strictEqual(txObj.logs[0].event, 'LogDataFeedQuery', 'wrong event logged');
@@ -201,7 +202,7 @@ contract(`****** START TEST [ ${scriptName} ]*******`, (accounts) => {
   describe('withdrawBalance', () => {
     let managerBalance = 0;
     let dataFeedBalance = 0;
-    const amount = web3.toWei(0.5, 'ether');
+    // const amount = web3.toWei(0.5, 'ether');
     const notManager = accounts[1];
 
     it('should not allow a non-Manager to withdraw', () => {
