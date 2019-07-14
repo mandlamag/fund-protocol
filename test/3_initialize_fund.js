@@ -30,6 +30,7 @@ const ethToWei = eth => eth * 1e18;
   const SECONDS_BETWEEN_QUERIES = 300;
 
   const MIN_INITIAL_SUBSCRIPTION = 20;
+  const _MIN_INITIAL_SUBSCRIPTION_ETH = new BN(ethToWei(MIN_INITIAL_SUBSCRIPTION).toString());
   const INVESTOR_ALLOCATION = 21;
   const MIN_SUBSCRIPTION = 5;
   const MIN_REDEMPTION_SHARES = 100000;
@@ -72,8 +73,8 @@ const ethToWei = eth => eth * 1e18;
         'TestFund',                         // _name
         'TEST',                             // _symbol
         4,                                  // _decimals
-        new BN(ethToWei(MIN_INITIAL_SUBSCRIPTION)), // _minInitialSubscriptionEth
-        ethToWei(MIN_SUBSCRIPTION),         // _minSubscriptionEth
+        MIN_INITIAL_SUBSCRIPTION, // _minInitialSubscriptionEth
+        MIN_SUBSCRIPTION,         // _minSubscriptionEth
         MIN_REDEMPTION_SHARES,              // _minRedemptionShares,
         ADMIN_FEE * 100,                    // _adminFeeBps
         MGMT_FEE * 100,                     // _mgmtFeeBps

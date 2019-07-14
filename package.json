@@ -1,7 +1,7 @@
 {
   "name": "fund-protocol",
-  "author": "CoinAlpha, Inc",
-  "version": "0.3.0",
+  "author": "SolidityFund, Inc",
+  "version": "0.7.0",
   "private": true,
   "repository": {
     "type": "git",
