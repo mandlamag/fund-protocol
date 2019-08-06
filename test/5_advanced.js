@@ -20,9 +20,7 @@ const scriptName = path.basename(__filename);
 // helpers
 const getBalancePromise = address => web3.eth.getBalancePromise(address);
 const weiToNum = wei => web3.fromWei(wei, 'ether');
-const ethToWei = eth => web3.toWei(eth, 'ether');
-const diffInWei = (a, b) => weiToNum(a) - weiToNum(b);
-const gasToWei = gas => gas * 1e11;
+const ethToWei = eth => eth * 1e18;
 
 contract('Advanced', (accounts) => {
 

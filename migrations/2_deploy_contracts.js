@@ -28,9 +28,6 @@ const ADMIN_FEE                     = 1;
 const MGMT_FEE                      = 0;
 const PERFORM_FEE                   = 20;
 
-let MIN_INITIAL_WEI = ethToWei(MIN_INITIAL_SUBSCRIPTION_ETH);
-let MIN_SUBSCRIPTION_WEI = ethToWei(MIN_SUBSCRIPTION_ETH);
-
 module.exports = function(deployer, network, accounts) {
 
   // Accounts
@@ -74,8 +71,8 @@ module.exports = function(deployer, network, accounts) {
         FUND_NAME,                      // _name
         FUND_SYMBOL,                    // _symbol
         FUND_DECIMALS,                  // _decimals
-        MIN_INITIAL_SUBSCRIPTION_ETH, // _minInitialSubscriptionEth
-        MIN_SUBSCRIPTION_ETH, // _minSubscriptionEth
+        ethToWei(MIN_INITIAL_SUBSCRIPTION_ETH).toString(), // _minInitialSubscriptionEth
+        ethToWei(MIN_SUBSCRIPTION_ETH).toString(), // _minSubscriptionEth
         MIN_REDEMPTION_SHARES,          // _minRedemptionShares,
         ADMIN_FEE * 100,                // _adminFeeBps
         MGMT_FEE * 100,                 // _mgmtFeeBps
@@ -111,8 +108,8 @@ module.exports = function(deployer, network, accounts) {
         FUND_NAME,                      // _name
         FUND_SYMBOL,                    // _symbol
         FUND_DECIMALS,                  // _decimals
-        MIN_INITIAL_SUBSCRIPTION_ETH, // _minInitialSubscriptionEth
-        MIN_SUBSCRIPTION_ETH, // _minSubscriptionEth
+        ethToWei(MIN_INITIAL_SUBSCRIPTION_ETH), // _minInitialSubscriptionEth
+        ethToWei(MIN_SUBSCRIPTION_ETH), // _minSubscriptionEth
         MIN_REDEMPTION_SHARES,          // _minRedemptionShares,
         ADMIN_FEE * 100,                // _adminFeeBps
         MGMT_FEE * 100,                 // _mgmtFeeBps

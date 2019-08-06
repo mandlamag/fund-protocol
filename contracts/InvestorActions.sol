@@ -30,7 +30,6 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
   // Used for both whitelisting a new investor and modifying an existing investor's allocation
   function modifyAllocation(uint _allocation)
     external
-    onlyFund
     returns (uint _ethTotalAllocation)
   {
     require(_allocation > 0, "allocation invalid. Must more than 0");
@@ -73,7 +72,10 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
       require(_amount >= fund.minSubscriptionEth(), "Error: Amount less than required minimum subscription");
     }
     // require(ethTotalAllocation >= _amount.add(ethPendingSubscription).add(fund.sharesToEth(sharesOwned)),
-    //  "Investor Total allocation has been exceeded");
+    //  "Investor total allocation has been exceeded");
+
+    //  require(ethPendingSubscription.add(_amount) > 0, "Failed to add amount [ethPendingSubscription]");
+    //  require(fund.totalEthPendingSubscription().add(_amount) > 0, "Failed to add amount");
 
     return (ethPendingSubscription.add(_amount),                                 // new investor.ethPendingSubscription
             fund.totalEthPendingSubscription().add(_amount)                      // new totalEthPendingSubscription
@@ -105,7 +107,7 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
   // Processes an investor's subscription request and mints new shares at the current navPerShare
   function subscribe(address _addr)
     external
-    onlyFund
+    // onlyFund
     returns (uint, uint, uint, uint, uint, uint)
   {
     (, uint256 ethPendingSubscription,uint256 sharesOwned,,) = fund.getInvestor(_addr);

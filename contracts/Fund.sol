@@ -73,6 +73,8 @@ contract Fund is DestructiblePausable, IFund{
   event LogManagementFeeWithdrawal(uint amountInEth, uint usdEthExchangeRate);
   event LogAdminFeeWithdrawal(uint amountInEth, uint usdEthExchangeRate);
 
+  event LogPendingSubscriptionThings(uint amountInEth, uint usdEthExchangeRate);
+
   // Modifiers
   modifier onlyFromExchange {
     require(msg.sender == exchange, "Access denied. Only exchange can access");
@@ -213,8 +215,9 @@ constructor(
     payable
     returns (bool success)
   {
-    emit LogSubscriptionRequest(msg.sender, msg.value, _usdEthBasis);
+    emit LogPendingSubscriptionThings(msg.value, _usdEthBasis);
     (uint _ethPendingSubscription, uint _totalEthPendingSubscription) = investorActions.requestSubscription(msg.sender, msg.value);
+    emit LogPendingSubscriptionThings(_ethPendingSubscription, _totalEthPendingSubscription);
     investors[msg.sender].ethPendingSubscription = _ethPendingSubscription;
     totalEthPendingSubscription = _totalEthPendingSubscription;
 
