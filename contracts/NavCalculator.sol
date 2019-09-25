@@ -123,7 +123,8 @@ contract NavCalculator is DestructibleModified {
     accumulatedMgmtFees = accumulatedMgmtFees.add(performFee).sub(performFeeOffset);
     navPerShare = toNavPerShare(netAssetValue);
 
-    emit LogNavCalculation(lastCalcDate, elapsedTime, grossAssetValueLessFees, netAssetValue, fund.totalSupply(), adminFee, mgmtFee, performFee, performFeeOffset, lossPayback);
+    emit LogNavCalculation(lastCalcDate, elapsedTime, grossAssetValueLessFees,
+     netAssetValue, fund.totalSupply(), adminFee, mgmtFee, performFee, performFeeOffset, lossPayback);
 
     return (lastCalcDate, navPerShare, lossCarryforward, accumulatedMgmtFees, accumulatedAdminFees);
   }

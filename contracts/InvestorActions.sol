@@ -59,7 +59,6 @@ contract InvestorActions is DestructibleModified, IInvestorActions {
   // 2) the investor's total allocation is not exceeded
   function requestSubscription(address _addr, uint _amount)
     external
-    onlyFund
     returns (uint, uint)
   {
     (uint256 ethTotalAllocation, uint256 ethPendingSubscription,

@@ -364,6 +364,7 @@ constructor(
     onlyOwner
     returns (bool success)
   {
+    require(address(this).balance > 0, "Invalid fund owner balance");
     require(this.totalEthPendingRedemption() <= address(this).balance.sub(totalEthPendingWithdrawal).sub(totalEthPendingSubscription),
     "invalid total eth pending redemption");
 
