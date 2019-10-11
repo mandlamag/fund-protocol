@@ -4,8 +4,6 @@ A blockchain protocol for tokenized hedge funds.
 
 This open-source protocol enables asset managers to create a blockchain-based vehicle that manages capital contributed by external investors. The protocol utilizes the blockchain to perform functions such as segregated asset custody, net asset value calculation, fee accounting, and management of investor in-flows and out-flows.  The goal of this project is to eliminate the setup and operational costs imposed by middlemen in traditional funds, while maximizing transparency and liquidity for investors.  
 
-For more information about the project, please see the our [wiki](https://github.com/CoinAlpha/fund-protocol/wiki).
-
 ## Installation
 
 ### Ganache 
@@ -15,9 +13,9 @@ sudo npm install -g ganache-cli
 ```
 
 ### Truffle
-Deployment and testing framework.  Use v4.0.0-beta.0 which ships with solc v0.4.15.
+Deployment and testing framework.  
 ```
-npm install -g truffle@4.0.0-beta.0
+npm install -g truffle
 ```
 
 
